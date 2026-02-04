@@ -23,6 +23,7 @@ from mjlab.managers.curriculum_manager import (
 )
 from mjlab.managers.event_manager import EventManager, EventTermCfg
 from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationManager
+from mjlab.managers.manager_base import ManagerBase
 from mjlab.managers.reward_manager import RewardManager, RewardTermCfg
 from mjlab.managers.termination_manager import TerminationManager, TerminationTermCfg
 from mjlab.scene import Scene
@@ -65,6 +66,13 @@ class ManagerBasedRlEnvCfg:
   observation terms that are concatenated. Groups can have different settings for
   noise, history, and delay."""
 
+  observation_manager_cls: type[ManagerBase] | None = None
+  """Custom observation manager class. If None, uses the default ObservationManager.
+  For standing-up tasks, use UnactuatedMaskingObservationManager."""
+
+  observation_manager_kwargs: dict[str, Any] = field(default_factory=dict)
+  """Additional keyword arguments passed to the observation manager constructor."""
+
   actions: dict[str, ActionTermCfg] = field(default_factory=dict)
   """Action terms configuration. Each term controls a specific entity/aspect
   (e.g., joint positions). Action dimensions are concatenated across terms."""
@@ -103,6 +111,13 @@ class ManagerBasedRlEnvCfg:
 
   rewards: dict[str, RewardTermCfg] = field(default_factory=dict)
   """Reward terms configuration."""
+
+  reward_manager_cls: type[ManagerBase] | None = None
+  """Custom reward manager class. If None, uses the default RewardManager.
+  For standing-up tasks, use GaussianProductRewardManager."""
+
+  reward_manager_kwargs: dict[str, Any] = field(default_factory=dict)
+  """Additional keyword arguments passed to the reward manager constructor."""
 
   terminations: dict[str, TerminationTermCfg] = field(default_factory=dict)
   """Termination terms configuration. If empty, episodes never reset. Use
@@ -275,16 +290,23 @@ class ManagerBasedRlEnv:
     # Action and observation managers.
     self.action_manager = ActionManager(self.cfg.actions, self)
     print_info(f"[INFO] {self.action_manager}")
-    self.observation_manager = ObservationManager(self.cfg.observations, self)
+
+    # Use custom observation manager class if specified.
+    obs_manager_cls = self.cfg.observation_manager_cls or ObservationManager
+    obs_kwargs = self.cfg.observation_manager_kwargs.copy()
+    self.observation_manager = obs_manager_cls(self.cfg.observations, self, **obs_kwargs)
     print_info(f"[INFO] {self.observation_manager}")
 
     # Other RL-specific managers.
 
     self.termination_manager = TerminationManager(self.cfg.terminations, self)
     print_info(f"[INFO] {self.termination_manager}")
-    self.reward_manager = RewardManager(
-      self.cfg.rewards, self, scale_by_dt=self.cfg.scale_rewards_by_dt
-    )
+
+    # Use custom reward manager class if specified.
+    reward_manager_cls = self.cfg.reward_manager_cls or RewardManager
+    reward_kwargs = {"scale_by_dt": self.cfg.scale_rewards_by_dt}
+    reward_kwargs.update(self.cfg.reward_manager_kwargs)
+    self.reward_manager = reward_manager_cls(self.cfg.rewards, self, **reward_kwargs)
     print_info(f"[INFO] {self.reward_manager}")
     if len(self.cfg.curriculum) > 0:
       self.curriculum_manager = CurriculumManager(self.cfg.curriculum, self)
@@ -462,5 +484,13 @@ class ManagerBasedRlEnv:
     # termination manager.
     info = self.termination_manager.reset(env_ids)
     self.extras["log"].update(info)
+
+    # Log curriculum values if present (for standing-up task).
+    # These attributes are dynamically set by the curriculum event.
+    if hasattr(self, "force_magnitude") and self.force_magnitude is not None:
+      self.extras["log"]["Curriculum/force_magnitude"] = self.force_magnitude.mean()  # type: ignore[union-attr]
+    if hasattr(self, "action_rescale") and self.action_rescale is not None:
+      self.extras["log"]["Curriculum/action_scale"] = self.action_rescale.mean()  # type: ignore[union-attr]
+
     # reset the episode length buffer.
     self.episode_length_buf[env_ids] = 0
