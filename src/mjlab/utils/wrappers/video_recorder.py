@@ -37,6 +37,8 @@ class VideoRecorder(ManagerBasedRlEnv):
           If set, records exactly that many frames regardless of episode boundaries.
       name_prefix: Prefix for video filenames.
       disable_logger: Whether to disable logging.
+      on_video_ready: Optional callback invoked after a video is saved.
+          Receives the video file path and the current step count.
   """
 
   def __init__(
@@ -48,6 +50,7 @@ class VideoRecorder(ManagerBasedRlEnv):
     video_length: int | None = None,
     name_prefix: str = "rl-video",
     disable_logger: bool = False,
+    on_video_ready: Callable[[Path, int], None] | None = None,
   ):
     # Don't call super().__init__() - we're wrapping an existing env.
     self._wrapped_env = env
@@ -59,6 +62,7 @@ class VideoRecorder(ManagerBasedRlEnv):
     self.video_length = video_length
     self.name_prefix = name_prefix
     self.disable_logger = disable_logger
+    self.on_video_ready = on_video_ready
 
     self.step_count: int = 0
     self.episode_count: int = 0  # Tracks actual episodes
@@ -198,6 +202,9 @@ class VideoRecorder(ManagerBasedRlEnv):
 
       if not self.disable_logger:
         print(f"[INFO] Saved video to {self.current_video_path}")
+
+      if self.on_video_ready is not None:
+        self.on_video_ready(self.current_video_path, self.step_count)
 
     self.is_recording = False
     self.current_video_frames = []

@@ -29,6 +29,7 @@ class TrainConfig:
   video: bool = False
   video_length: int = 200
   video_interval: int = 2000
+  no_wandb_video: bool = False
   enable_nan_guard: bool = False
   torchrunx_log_dir: str | None = None
   wandb_run_path: str | None = None
@@ -103,8 +104,15 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
   if rank == 0:
     print(f"[INFO] Logging experiment in directory: {log_dir}")
 
+  # Auto-enable video recording when using WandB logger (unless opted out).
+  should_record_video = cfg.video or (
+    cfg.agent.logger == "wandb" and not cfg.no_wandb_video
+  )
+
   env = ManagerBasedRlEnv(
-    cfg=cfg.env, device=device, render_mode="rgb_array" if cfg.video else None
+    cfg=cfg.env,
+    device=device,
+    render_mode="rgb_array" if should_record_video else None,
   )
 
   log_root_path = log_dir.parent  # Go up from specific run dir to experiment dir.
@@ -131,13 +139,27 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
       )
 
   # Only record videos on rank 0 to avoid multiple workers writing to the same files.
-  if cfg.video and rank == 0:
+  if should_record_video and rank == 0:
+
+    def _upload_video_to_wandb(video_path: Path, step: int) -> None:
+      import wandb
+
+      if wandb.run is not None:
+        iteration = step // cfg.agent.num_steps_per_env
+        wandb.log(
+          {"Video/train": wandb.Video(str(video_path), format="mp4")},
+          step=iteration,
+        )
+
+    use_wandb = cfg.agent.logger == "wandb" and not cfg.no_wandb_video
+
     env = VideoRecorder(
       env,
       video_folder=Path(log_dir) / "videos" / "train",
       step_trigger=lambda step: step % cfg.video_interval == 0,
       video_length=cfg.video_length,
       disable_logger=True,
+      on_video_ready=_upload_video_to_wandb if use_wandb else None,
     )
     print("[INFO] Recording videos during training.")
 
