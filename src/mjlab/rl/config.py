@@ -1,7 +1,7 @@
 """RSL-RL configuration."""
 
 from dataclasses import dataclass, field
-from typing import Literal, Tuple
+from typing import Any, Literal, Tuple
 
 
 @dataclass
@@ -20,8 +20,14 @@ class RslRlModelCfg:
   """The type of noise standard deviation."""
   stochastic: bool = False
   """Whether the model output is stochastic."""
+  cnn_cfg: dict[str, Any] | None = None
+  """CNN encoder config. When set, class_name should be "CNNModel".
+
+  Passed to ``rsl_rl.modules.CNN``. Common keys: output_channels,
+  kernel_size, stride, padding, activation, global_pool, max_pool.
+  """
   class_name: str = "MLPModel"
-  """Ignore, required by RSL-RL."""
+  """Model class name resolved by RSL-RL (MLPModel or CNNModel)."""
 
 
 @dataclass
@@ -61,8 +67,10 @@ class RslRlPpoAlgorithmCfg:
   """
   optimizer: Literal["adam", "adamw", "sgd", "rmsprop"] = "adam"
   """The optimizer to use."""
+  share_cnn_encoders: bool = False
+  """Share CNN encoders between actor and critic."""
   class_name: str = "PPO"
-  """Ignore, required by RSL-RL."""
+  """Algorithm class name resolved by RSL-RL."""
 
 
 @dataclass

@@ -8,6 +8,7 @@ import math
 from dataclasses import replace
 
 from mjlab.envs import ManagerBasedRlEnvCfg
+from mjlab.envs import mdp as envs_mdp
 from mjlab.envs.mdp.actions import JointPositionActionCfg
 from mjlab.managers.action_manager import ActionTermCfg
 from mjlab.managers.command_manager import CommandTermCfg
@@ -18,6 +19,7 @@ from mjlab.managers.reward_manager import RewardTermCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.managers.termination_manager import TerminationTermCfg
 from mjlab.scene import SceneCfg
+from mjlab.sensor import GridPatternCfg, ObjRef, RayCastSensorCfg
 from mjlab.sim import MujocoCfg, SimulationCfg
 from mjlab.tasks.velocity import mdp
 from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
@@ -62,10 +64,21 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.generated_commands,
       params={"command_name": "twist"},
     ),
+    "height_scan": ObservationTermCfg(
+      func=envs_mdp.height_scan,
+      params={"sensor_name": "terrain_scan"},
+      noise=Unoise(n_min=-0.1, n_max=0.1),
+      clip=(-1.0, 1.0),
+    ),
   }
 
   critic_terms = {
     **actor_terms,
+    "height_scan": ObservationTermCfg(
+      func=envs_mdp.height_scan,
+      params={"sensor_name": "terrain_scan"},
+      clip=(-1.0, 1.0),
+    ),
     "foot_height": ObservationTermCfg(
       func=mdp.foot_height,
       params={"asset_cfg": SceneEntityCfg("robot", site_names=())},  # Set per-robot.
@@ -350,6 +363,17 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
   # Assemble and return
   ##
 
+  terrain_scan = RayCastSensorCfg(
+    name="terrain_scan",
+    frame=ObjRef(type="body", name="", entity="robot"),  # Set per-robot.
+    ray_alignment="yaw",
+    pattern=GridPatternCfg(size=(1.6, 1.0), resolution=0.1),
+    max_distance=5.0,
+    exclude_parent_body=True,
+    debug_vis=True,
+    viz=RayCastSensorCfg.VizCfg(show_normals=True),
+  )
+
   return ManagerBasedRlEnvCfg(
     scene=SceneCfg(
       terrain=TerrainImporterCfg(
@@ -357,6 +381,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         terrain_generator=replace(ROUGH_TERRAINS_CFG),
         max_init_terrain_level=5,
       ),
+      sensors=(terrain_scan,),
       num_envs=1,
       extent=2.0,
     ),

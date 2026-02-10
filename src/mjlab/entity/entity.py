@@ -206,7 +206,7 @@ class Entity:
       qpos_components.append(joint_pos)
 
     key_qpos = np.hstack(qpos_components) if qpos_components else np.array([])
-    key = self._spec.add_key(name="init_state", qpos=key_qpos)
+    key = self._spec.add_key(name="init_state", qpos=key_qpos.tolist())
 
     if self.is_actuated and joint_pos is not None:
       name_to_pos = {name: joint_pos[i] for i, name in enumerate(self.joint_names)}

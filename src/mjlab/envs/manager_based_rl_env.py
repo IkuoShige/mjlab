@@ -22,6 +22,11 @@ from mjlab.managers.curriculum_manager import (
   NullCurriculumManager,
 )
 from mjlab.managers.event_manager import EventManager, EventTermCfg
+from mjlab.managers.metrics_manager import (
+  MetricsManager,
+  MetricsTermCfg,
+  NullMetricsManager,
+)
 from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationManager
 from mjlab.managers.reward_manager import RewardManager, RewardTermCfg
 from mjlab.managers.termination_manager import TerminationManager, TerminationTermCfg
@@ -114,6 +119,9 @@ class ManagerBasedRlEnvCfg:
   curriculum: dict[str, CurriculumTermCfg] = field(default_factory=dict)
   """Curriculum terms for adaptive difficulty."""
 
+  metrics: dict[str, MetricsTermCfg] = field(default_factory=dict)
+  """Custom metric terms for logging per-step values as episode averages."""
+
   is_finite_horizon: bool = False
   """Whether the task has a finite or infinite horizon. Defaults to False (infinite).
 
@@ -189,6 +197,10 @@ class ManagerBasedRlEnv:
       model=self.sim.model,
       data=self.sim.data,
     )
+
+    # Wire sensor context to simulation for sense_graph.
+    if self.scene.sensor_context is not None:
+      self.sim.set_sensor_context(self.scene.sensor_context)
 
     # Print environment info.
     print_info("")
@@ -314,6 +326,11 @@ class ManagerBasedRlEnv:
     else:
       self.curriculum_manager = NullCurriculumManager()
     print_info(f"[INFO] {self.curriculum_manager}")
+    if len(self.cfg.metrics) > 0:
+      self.metrics_manager = MetricsManager(self.cfg.metrics, self)
+    else:
+      self.metrics_manager = NullMetricsManager()
+    print_info(f"[INFO] {self.metrics_manager}")
 
     # Configure spaces for the environment.
     self._configure_gym_env_spaces()
@@ -337,6 +354,7 @@ class ManagerBasedRlEnv:
     self._reset_idx(env_ids)
     self.scene.write_data_to_sim()
     self.sim.forward()
+    self.sim.sense()
     self.obs_buf = self.observation_manager.compute(update_history=True)
     return self.obs_buf, self.extras
 
@@ -390,6 +408,7 @@ class ManagerBasedRlEnv:
     self.reset_time_outs = self.termination_manager.time_outs
 
     self.reward_buf = self.reward_manager.compute(dt=self.step_dt)
+    self.metrics_manager.compute()
 
     # Reset envs that terminated/timed-out and log the episode info.
     reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
@@ -408,6 +427,7 @@ class ManagerBasedRlEnv:
     if "interval" in self.event_manager.available_modes:
       self.event_manager.apply(mode="interval", dt=self.step_dt)
 
+    self.sim.sense()
     self.obs_buf = self.observation_manager.compute(update_history=True)
 
     return (
@@ -507,6 +527,9 @@ class ManagerBasedRlEnv:
     self.extras["log"].update(info)
     # rewards manager.
     info = self.reward_manager.reset(env_ids)
+    self.extras["log"].update(info)
+    # metrics manager.
+    info = self.metrics_manager.reset(env_ids)
     self.extras["log"].update(info)
     # curriculum manager.
     info = self.curriculum_manager.reset(env_ids)

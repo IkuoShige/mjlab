@@ -1,6 +1,7 @@
 import os
 
 import torch
+from rsl_rl.env import VecEnv
 from rsl_rl.runners import OnPolicyRunner
 
 from mjlab.rl.vecenv_wrapper import RslRlVecEnvWrapper
@@ -10,6 +11,19 @@ class MjlabOnPolicyRunner(OnPolicyRunner):
   """Base runner that persists environment state across checkpoints."""
 
   env: RslRlVecEnvWrapper
+
+  def __init__(
+    self,
+    env: VecEnv,
+    train_cfg: dict,
+    log_dir: str | None = None,
+    device: str = "cpu",
+  ) -> None:
+    # Strip None-valued cnn_cfg so MLPModel doesn't receive it.
+    for key in ("actor", "critic"):
+      if key in train_cfg and train_cfg[key].get("cnn_cfg") is None:
+        train_cfg[key].pop("cnn_cfg", None)
+    super().__init__(env, train_cfg, log_dir, device)
 
   def export_policy_to_onnx(
     self, path: str, filename: str = "policy.onnx", verbose: bool = False

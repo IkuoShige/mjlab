@@ -18,6 +18,7 @@ from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg, mdp
 from mjlab.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
 from mjlab.rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 from mjlab.rl.runner import MjlabOnPolicyRunner
+from mjlab.rl.spatial_softmax import SpatialSoftmaxCNNModel
 from mjlab.scene import SceneCfg
 from mjlab.sim import MujocoCfg, SimulationCfg
 from mjlab.tasks.tracking.rl.runner import _OnnxMotionModel
@@ -215,6 +216,98 @@ def test_onnx_export_without_normalization():
   with torch.no_grad():
     out = onnx_model(x)
   assert out.shape == (4, 4)
+
+
+# -- CNN (spatial-softmax) ONNX export tests ---------------------------------
+
+_IMG_H, _IMG_W, _IMG_C = 16, 16, 3
+_OBS_DIM_1D = 8
+_OUTPUT_DIM = 4
+
+
+def _make_cnn_actor(obs_normalization=True):
+  obs = TensorDict(
+    {
+      "actor": torch.zeros(1, _OBS_DIM_1D),
+      "camera": torch.zeros(1, _IMG_C, _IMG_H, _IMG_W),
+    }
+  )
+  obs_groups = {"actor": ["actor", "camera"]}
+  cnn_cfg = {
+    "output_channels": [8],
+    "kernel_size": [3],
+    "stride": [1],
+    "spatial_softmax_temperature": 1.0,
+  }
+  return SpatialSoftmaxCNNModel(
+    obs=obs,
+    obs_groups=obs_groups,
+    obs_set="actor",
+    output_dim=_OUTPUT_DIM,
+    cnn_cfg=cnn_cfg,
+    hidden_dims=[32, 32],
+    activation="elu",
+    obs_normalization=obs_normalization,
+    stochastic=False,
+  )
+
+
+def _cnn_model_output(actor, x_1d, x_2d):
+  obs = TensorDict({"actor": x_1d, "camera": x_2d})
+  with torch.no_grad():
+    return actor(obs)
+
+
+def test_cnn_onnx_export_matches_actor():
+  """as_onnx() with SpatialSoftmaxCNNModel matches the original model."""
+  actor = _make_cnn_actor(obs_normalization=True)
+  # Train normalizer on 1D observations.
+  actor.train()
+  for _ in range(50):
+    obs = TensorDict(
+      {
+        "actor": torch.randn(64, _OBS_DIM_1D) * 5 + 3,
+        "camera": torch.randn(64, _IMG_C, _IMG_H, _IMG_W),
+      }
+    )
+    actor.update_normalization(obs)
+  actor.eval()
+
+  onnx_model = actor.as_onnx(verbose=False)
+  onnx_model.eval()
+
+  x_1d = torch.randn(4, _OBS_DIM_1D)
+  x_2d = torch.randn(4, _IMG_C, _IMG_H, _IMG_W)
+
+  expected = _cnn_model_output(actor, x_1d, x_2d)
+  with torch.no_grad():
+    actual = onnx_model(x_1d, x_2d)
+  torch.testing.assert_close(actual, expected, atol=1e-6, rtol=0)
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_cnn_onnx_export_to_file():
+  """SpatialSoftmaxCNNModel exports to a valid ONNX file."""
+  actor = _make_cnn_actor(obs_normalization=False)
+  onnx_model = actor.as_onnx(verbose=False)
+  onnx_model.to("cpu")
+  onnx_model.eval()
+
+  with tempfile.TemporaryDirectory() as tmpdir:
+    onnx_path = Path(tmpdir) / "cnn_policy.onnx"
+    torch.onnx.export(
+      onnx_model,
+      onnx_model.get_dummy_inputs(),  # pyright: ignore[reportCallIssue]
+      str(onnx_path),
+      export_params=True,
+      opset_version=18,
+      input_names=onnx_model.input_names,  # pyright: ignore[reportArgumentType]
+      output_names=onnx_model.output_names,  # pyright: ignore[reportArgumentType]
+      dynamic_axes={},
+      dynamo=False,
+    )
+    assert onnx_path.exists()
+    onnx.checker.check_model(str(onnx_path))
 
 
 class _MockMotion:

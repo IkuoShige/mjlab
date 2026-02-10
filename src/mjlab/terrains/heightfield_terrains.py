@@ -254,7 +254,7 @@ class HfPyramidSlopedTerrainCfg(SubTerrainCfg):
       ],
       nrow=noise.shape[0],
       ncol=noise.shape[1],
-      userdata=normalized_elevation.flatten().astype(np.float32),
+      userdata=normalized_elevation.flatten().astype(np.float32).tolist(),
     )
 
     if self.inverted:
@@ -422,7 +422,7 @@ class HfRandomUniformTerrainCfg(SubTerrainCfg):
       ],
       nrow=noise.shape[0],
       ncol=noise.shape[1],
-      userdata=normalized_elevation.flatten().astype(np.float32),
+      userdata=normalized_elevation.flatten().astype(np.float32).tolist(),
     )
 
     material_name = color_by_height(spec, noise, unique_id, normalized_elevation)
@@ -549,7 +549,7 @@ class HfWaveTerrainCfg(SubTerrainCfg):
       ],
       nrow=noise.shape[0],
       ncol=noise.shape[1],
-      userdata=normalized_elevation.flatten().astype(np.float32),
+      userdata=normalized_elevation.flatten().astype(np.float32).tolist(),
     )
 
     material_name = color_by_height(spec, noise, unique_id, normalized_elevation)
@@ -709,7 +709,7 @@ class HfDiscreteObstaclesTerrainCfg(SubTerrainCfg):
       ],
       nrow=noise.shape[0],
       ncol=noise.shape[1],
-      userdata=normalized_elevation.flatten().astype(np.float32),
+      userdata=normalized_elevation.flatten().astype(np.float32).tolist(),
     )
 
     # For "choice" mode, obstacles can be negative (pits), so offset the

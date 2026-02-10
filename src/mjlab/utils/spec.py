@@ -59,7 +59,7 @@ def auto_wrap_fixed_base_mocap(
 
     # Re-add keyframes to wrapper spec.
     for qpos, ctrl, name in keyframes:
-      wrapper_spec.add_key(name=name, qpos=qpos, ctrl=ctrl)
+      wrapper_spec.add_key(name=name, qpos=qpos.tolist(), ctrl=ctrl.tolist())
 
     return wrapper_spec
 
