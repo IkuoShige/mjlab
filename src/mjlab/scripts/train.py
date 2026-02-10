@@ -104,15 +104,8 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
   if rank == 0:
     print(f"[INFO] Logging experiment in directory: {log_dir}")
 
-  # Auto-enable video recording when using WandB logger (unless opted out).
-  should_record_video = cfg.video or (
-    cfg.agent.logger == "wandb" and not cfg.no_wandb_video
-  )
-
   env = ManagerBasedRlEnv(
-    cfg=cfg.env,
-    device=device,
-    render_mode="rgb_array" if should_record_video else None,
+    cfg=cfg.env, device=device, render_mode="rgb_array" if cfg.video else None
   )
 
   log_root_path = log_dir.parent  # Go up from specific run dir to experiment dir.
@@ -139,7 +132,7 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
       )
 
   # Only record videos on rank 0 to avoid multiple workers writing to the same files.
-  if should_record_video and rank == 0:
+  if cfg.video and rank == 0:
 
     def _upload_video_to_wandb(video_path: Path, step: int) -> None:
       import wandb
