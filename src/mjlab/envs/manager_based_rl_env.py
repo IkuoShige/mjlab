@@ -132,6 +132,22 @@ class ManagerBasedRlEnvCfg:
   algorithms that expect unscaled reward signals (e.g., HER, static reward scaling).
   """
 
+  # Custom manager class overrides (extension points for external packages).
+
+  reward_manager_cls: type | None = None
+  """Optional custom reward manager class. If None, uses the default
+  :class:`RewardManager`. The class must accept ``(cfg, env, **kwargs)``."""
+
+  reward_manager_kwargs: dict[str, Any] = field(default_factory=dict)
+  """Extra keyword arguments passed to the reward manager constructor."""
+
+  observation_manager_cls: type | None = None
+  """Optional custom observation manager class. If None, uses the default
+  :class:`ObservationManager`. The class must accept ``(cfg, env, **kwargs)``."""
+
+  observation_manager_kwargs: dict[str, Any] = field(default_factory=dict)
+  """Extra keyword arguments passed to the observation manager constructor."""
+
 
 class ManagerBasedRlEnv:
   """Manager-based RL environment."""
@@ -275,16 +291,23 @@ class ManagerBasedRlEnv:
     # Action and observation managers.
     self.action_manager = ActionManager(self.cfg.actions, self)
     print_info(f"[INFO] {self.action_manager}")
-    self.observation_manager = ObservationManager(self.cfg.observations, self)
+    obs_cls = self.cfg.observation_manager_cls or ObservationManager
+    self.observation_manager = obs_cls(
+      self.cfg.observations, self, **self.cfg.observation_manager_kwargs
+    )
     print_info(f"[INFO] {self.observation_manager}")
 
     # Other RL-specific managers.
 
     self.termination_manager = TerminationManager(self.cfg.terminations, self)
     print_info(f"[INFO] {self.termination_manager}")
-    self.reward_manager = RewardManager(
-      self.cfg.rewards, self, scale_by_dt=self.cfg.scale_rewards_by_dt
-    )
+    reward_cls = self.cfg.reward_manager_cls or RewardManager
+    reward_kwargs = dict(self.cfg.reward_manager_kwargs)
+    if reward_cls is RewardManager:
+      reward_kwargs["scale_by_dt"] = self.cfg.scale_rewards_by_dt
+    else:
+      reward_kwargs.setdefault("scale_by_dt", self.cfg.scale_rewards_by_dt)
+    self.reward_manager = reward_cls(self.cfg.rewards, self, **reward_kwargs)
     print_info(f"[INFO] {self.reward_manager}")
     if len(self.cfg.curriculum) > 0:
       self.curriculum_manager = CurriculumManager(self.cfg.curriculum, self)
