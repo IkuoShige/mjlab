@@ -1,0 +1,2644 @@
+decimation: 4
+scene:
+  num_envs: 4096
+  env_spacing: 2.0
+  terrain:
+    init_state:
+      pos: !!python/tuple
+      - 0.0
+      - 0.0
+      - 0.0
+      rot: !!python/tuple
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+      lin_vel: !!python/tuple
+      - 0.0
+      - 0.0
+      - 0.0
+      ang_vel: !!python/tuple
+      - 0.0
+      - 0.0
+      - 0.0
+      joint_pos:
+        .*: 0.0
+      joint_vel:
+        .*: 0.0
+    spec_fn: !!python/name:mjlab.entity.entity.%3Clambda%3E ''
+    articulation: null
+    sort_actuators: false
+    lights: !!python/tuple
+    - name: sun
+      body: world
+      mode: fixed
+      target: null
+      type: directional
+      castshadow: true
+      pos: !!python/tuple
+      - 0.0
+      - 0.0
+      - 1.5
+      dir: !!python/tuple
+      - 0.0
+      - 0.0
+      - -1.0
+      cutoff: 45.0
+      exponent: 10.0
+    cameras: !!python/tuple []
+    textures: !!python/tuple
+    - name: groundplane
+      type: 2d
+      builtin: checker
+      rgb1: !!python/tuple
+      - 0.2
+      - 0.3
+      - 0.4
+      rgb2: !!python/tuple
+      - 0.1
+      - 0.2
+      - 0.3
+      width: 300
+      height: 300
+      mark: edge
+      markrgb: !!python/tuple
+      - 0.8
+      - 0.8
+      - 0.8
+    materials: !!python/tuple
+    - name: groundplane
+      rgba: !!python/tuple
+      - 1.0
+      - 1.0
+      - 1.0
+      - 1.0
+      texuniform: true
+      texrepeat: !!python/tuple
+      - 4.0
+      - 4.0
+      reflectance: 0.2
+      texture: groundplane
+      geom_names_expr: !!python/tuple
+      - terrain$
+    collisions: !!python/tuple []
+    terrain_type: plane
+    terrain_generator: null
+    env_spacing: 2.0
+    max_init_terrain_level: 5
+    num_envs: 4096
+  entities:
+    robot:
+      init_state:
+        pos: !!python/tuple
+        - 0
+        - 0
+        - 0.54
+        rot: !!python/tuple
+        - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+        lin_vel: !!python/tuple
+        - 0.0
+        - 0.0
+        - 0.0
+        ang_vel: !!python/tuple
+        - 0.0
+        - 0.0
+        - 0.0
+        joint_pos:
+          Left_Hip_Pitch: -0.2
+          Right_Hip_Pitch: -0.2
+          Left_Knee_Pitch: 0.4
+          Right_Knee_Pitch: 0.4
+          Left_Ankle_Pitch: -0.2
+          Right_Ankle_Pitch: -0.2
+          ALeft_Shoulder_Pitch: 0.3
+          ARight_Shoulder_Pitch: 0.3
+          Left_Elbow_Pitch: 0.5
+          Right_Elbow_Pitch: 0.5
+        joint_vel:
+          .*: 0.0
+      spec_fn: !!python/name:mjlab.asset_zoo.robots.booster_k1.k1_constants.get_spec ''
+      articulation:
+        actuators: !!python/tuple
+        - target_names_expr: !!python/tuple
+          - Left_Hip_Pitch
+          - Right_Hip_Pitch
+          transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+          - joint
+          armature: 0.0478125
+          frictionloss: 0.0
+          delay_min_lag: 0
+          delay_max_lag: 0
+          delay_hold_prob: 0.0
+          delay_update_period: 0
+          delay_per_env_phase: true
+          stiffness: 188.756184170834
+          damping: 12.01659189998096
+          effort_limit: 30.0
+        - target_names_expr: !!python/tuple
+          - Left_Hip_Roll
+          - Right_Hip_Roll
+          transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+          - joint
+          armature: 0.0339552
+          frictionloss: 0.0
+          delay_min_lag: 0
+          delay_max_lag: 0
+          delay_hold_prob: 0.0
+          delay_update_period: 0
+          delay_per_env_phase: true
+          stiffness: 134.04975654394775
+          damping: 8.53387254969377
+          effort_limit: 35.0
+        - target_names_expr: !!python/tuple
+          - Left_Hip_Yaw
+          - Right_Hip_Yaw
+          transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+          - joint
+          armature: 0.0282528
+          frictionloss: 0.0
+          delay_min_lag: 0
+          delay_max_lag: 0
+          delay_hold_prob: 0.0
+          delay_update_period: 0
+          delay_per_env_phase: true
+          stiffness: 111.53758368923897
+          damping: 7.100703113867337
+          effort_limit: 20.0
+        - target_names_expr: !!python/tuple
+          - Left_Knee_Pitch
+          - Right_Knee_Pitch
+          transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+          - joint
+          armature: 0.095625
+          frictionloss: 0.0
+          delay_min_lag: 0
+          delay_max_lag: 0
+          delay_hold_prob: 0.0
+          delay_update_period: 0
+          delay_per_env_phase: true
+          stiffness: 377.512368341668
+          damping: 24.03318379996192
+          effort_limit: 40.0
+        - target_names_expr: !!python/tuple
+          - Left_Ankle_Pitch
+          - Left_Ankle_Roll
+          - Right_Ankle_Pitch
+          - Right_Ankle_Roll
+          transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+          - joint
+          armature: 0.0565
+          frictionloss: 0.0
+          delay_min_lag: 0
+          delay_max_lag: 0
+          delay_hold_prob: 0.0
+          delay_update_period: 0
+          delay_per_env_phase: true
+          stiffness: 223.0530594646195
+          damping: 14.199998794225865
+          effort_limit: 20.0
+        - target_names_expr: !!python/tuple
+          - ALeft_Shoulder_Pitch
+          - Left_Shoulder_Roll
+          - Left_Elbow_Pitch
+          - Left_Elbow_Yaw
+          - ARight_Shoulder_Pitch
+          - Right_Shoulder_Roll
+          - Right_Elbow_Pitch
+          - Right_Elbow_Yaw
+          transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+          - joint
+          armature: 0.001
+          frictionloss: 0.0
+          delay_min_lag: 0
+          delay_max_lag: 0
+          delay_hold_prob: 0.0
+          delay_update_period: 0
+          delay_per_env_phase: true
+          stiffness: 3.947841760435743
+          damping: 0.25132741228718347
+          effort_limit: 14.0
+        - target_names_expr: !!python/tuple
+          - AAHead_yaw
+          - Head_pitch
+          transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+          - joint
+          armature: 0.002
+          frictionloss: 0.0
+          delay_min_lag: 0
+          delay_max_lag: 0
+          delay_hold_prob: 0.0
+          delay_update_period: 0
+          delay_per_env_phase: true
+          stiffness: 7.895683520871486
+          damping: 0.5026548245743669
+          effort_limit: 6.0
+        soft_joint_pos_limit_factor: 0.9
+      sort_actuators: false
+      lights: !!python/tuple []
+      cameras: !!python/tuple []
+      textures: !!python/tuple []
+      materials: !!python/tuple []
+      collisions: !!python/tuple
+      - geom_names_expr: !!python/tuple
+        - ^(left|right)_foot[1-4]_collision$
+        contype: 1
+        conaffinity: 1
+        condim: 3
+        priority: 1
+        friction: !!python/tuple
+        - 0.6
+        solref: null
+        solimp: null
+        margin: null
+        gap: null
+        solmix: null
+        disable_other_geoms: false
+  sensors: !!python/tuple
+  - name: foot_height_scan
+    frame: !!python/tuple
+    - type: site
+      name: left_foot
+      entity: robot
+    - type: site
+      name: right_foot
+      entity: robot
+    pattern:
+      rings: !!python/tuple
+      - radius: 0.03
+        num_samples: 6
+      include_center: true
+      direction: !!python/tuple
+      - 0.0
+      - 0.0
+      - -1.0
+    ray_alignment: yaw
+    max_distance: 1.0
+    exclude_parent_body: true
+    include_geom_groups: !!python/tuple
+    - 0
+    debug_vis: true
+    viz:
+      hit_color: !!python/tuple
+      - 1.0
+      - 0.0
+      - 1.0
+      - 0.8
+      miss_color: !!python/tuple
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.4
+      hit_sphere_color: !!python/tuple
+      - 1.0
+      - 0.0
+      - 1.0
+      - 1.0
+      hit_sphere_radius: 0.5
+      show_rays: true
+      show_normals: false
+      normal_color: !!python/tuple
+      - 1.0
+      - 1.0
+      - 0.0
+      - 1.0
+      normal_length: 5.0
+    reduction: min
+  - name: feet_ground_contact
+    primary:
+      mode: subtree
+      pattern: ^(left_foot_link|right_foot_link)$
+      entity: robot
+      exclude: !!python/tuple []
+    secondary:
+      mode: body
+      pattern: terrain
+      entity: null
+      exclude: !!python/tuple []
+    fields: !!python/tuple
+    - found
+    - force
+    reduce: netforce
+    num_slots: 1
+    secondary_policy: first
+    track_air_time: true
+    global_frame: false
+    history_length: 0
+    debug: false
+  - name: self_collision
+    primary:
+      mode: subtree
+      pattern: Trunk
+      entity: robot
+      exclude: !!python/tuple []
+    secondary:
+      mode: subtree
+      pattern: Trunk
+      entity: robot
+      exclude: !!python/tuple []
+    fields: !!python/tuple
+    - found
+    - force
+    reduce: none
+    num_slots: 1
+    secondary_policy: first
+    track_air_time: false
+    global_frame: false
+    history_length: 4
+    debug: false
+  extent: 2.0
+  spec_fn: null
+observations:
+  actor:
+    terms:
+      base_lin_vel:
+        func: &id001 !!python/name:mjlab.envs.mdp.observations.builtin_sensor ''
+        params:
+          sensor_name: robot/imu_lin_vel
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.5
+          n_max: 0.5
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      base_ang_vel:
+        func: *id001
+        params:
+          sensor_name: robot/imu_ang_vel
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.2
+          n_max: 0.2
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      projected_gravity:
+        func: &id002 !!python/name:mjlab.envs.mdp.observations.projected_gravity ''
+        params: {}
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.05
+          n_max: 0.05
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      joint_pos:
+        func: &id003 !!python/name:mjlab.envs.mdp.observations.joint_pos_rel ''
+        params: {}
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.01
+          n_max: 0.01
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      joint_vel:
+        func: &id004 !!python/name:mjlab.envs.mdp.observations.joint_vel_rel ''
+        params: {}
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -1.5
+          n_max: 1.5
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      actions:
+        func: &id005 !!python/name:mjlab.envs.mdp.observations.last_action ''
+        params: {}
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      command:
+        func: &id006 !!python/name:mjlab.envs.mdp.observations.generated_commands ''
+        params:
+          command_name: twist
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      memory_proposal:
+        func: &id007 !!python/name:mjlab.tasks.locomotion_memory.mdp.observations.proposal_vector ''
+        params:
+          command_name: memory
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      memory_features:
+        func: &id008 !!python/name:mjlab.tasks.locomotion_memory.mdp.observations.proposal_features ''
+        params:
+          command_name: memory
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+    concatenate_terms: true
+    concatenate_dim: -1
+    enable_corruption: true
+    history_length: null
+    flatten_history_dim: true
+    nan_policy: disabled
+    nan_check_per_term: true
+  critic:
+    terms:
+      base_lin_vel:
+        func: *id001
+        params:
+          sensor_name: robot/imu_lin_vel
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.5
+          n_max: 0.5
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      base_ang_vel:
+        func: *id001
+        params:
+          sensor_name: robot/imu_ang_vel
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.2
+          n_max: 0.2
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      projected_gravity:
+        func: *id002
+        params: {}
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.05
+          n_max: 0.05
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      joint_pos:
+        func: *id003
+        params: {}
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -0.01
+          n_max: 0.01
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      joint_vel:
+        func: *id004
+        params: {}
+        noise:
+          operation: add
+          _tensor_cache: {}
+          n_min: -1.5
+          n_max: 1.5
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      actions:
+        func: *id005
+        params: {}
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      command:
+        func: *id006
+        params:
+          command_name: twist
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      foot_height:
+        func: !!python/name:mjlab.tasks.velocity.mdp.observations.foot_height ''
+        params:
+          sensor_name: foot_height_scan
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      foot_air_time:
+        func: !!python/name:mjlab.tasks.velocity.mdp.observations.foot_air_time ''
+        params:
+          sensor_name: feet_ground_contact
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      foot_contact:
+        func: !!python/name:mjlab.tasks.velocity.mdp.observations.foot_contact ''
+        params:
+          sensor_name: feet_ground_contact
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      foot_contact_forces:
+        func: !!python/name:mjlab.tasks.velocity.mdp.observations.foot_contact_forces ''
+        params:
+          sensor_name: feet_ground_contact
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      memory_proposal:
+        func: *id007
+        params:
+          command_name: memory
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      memory_features:
+        func: *id008
+        params:
+          command_name: memory
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+      memory_state:
+        func: !!python/name:mjlab.tasks.locomotion_memory.mdp.observations.proposal_state ''
+        params:
+          command_name: memory
+        noise: null
+        clip: null
+        scale: null
+        delay_min_lag: 0
+        delay_max_lag: 0
+        delay_per_env: true
+        delay_hold_prob: 0.0
+        delay_update_period: 0
+        delay_per_env_phase: true
+        history_length: 0
+        flatten_history_dim: true
+    concatenate_terms: true
+    concatenate_dim: -1
+    enable_corruption: false
+    history_length: null
+    flatten_history_dim: true
+    nan_policy: disabled
+    nan_check_per_term: true
+actions:
+  joint_pos:
+    entity_name: robot
+    clip: null
+    transmission_type: !!python/object/apply:mjlab.actuator.actuator.TransmissionType
+    - joint
+    actuator_names: !!python/tuple
+    - .*
+    scale:
+      Left_Hip_Pitch: 0.039733797506799125
+      Right_Hip_Pitch: 0.039733797506799125
+      Left_Hip_Roll: 0.06527426998445418
+      Right_Hip_Roll: 0.06527426998445418
+      Left_Hip_Yaw: 0.04482793901946788
+      Right_Hip_Yaw: 0.04482793901946788
+      Left_Knee_Pitch: 0.026489198337866084
+      Right_Knee_Pitch: 0.026489198337866084
+      Left_Ankle_Pitch: 0.022416191071313665
+      Left_Ankle_Roll: 0.022416191071313665
+      Right_Ankle_Pitch: 0.022416191071313665
+      Right_Ankle_Roll: 0.022416191071313665
+      ALeft_Shoulder_Pitch: 0.0
+      Left_Shoulder_Roll: 0.0
+      Left_Elbow_Pitch: 0.0
+      Left_Elbow_Yaw: 0.0
+      ARight_Shoulder_Pitch: 0.0
+      Right_Shoulder_Roll: 0.0
+      Right_Elbow_Pitch: 0.0
+      Right_Elbow_Yaw: 0.0
+      AAHead_yaw: 0.0
+      Head_pitch: 0.0
+    offset: 0.0
+    preserve_order: false
+    reference_command_name: memory
+    fallback_to_default_pose: true
+    turn_command_name: twist
+    turn_min_abs_yaw_command: 0.1
+    turn_max_forward_speed: 0.25
+    turn_max_lateral_speed: 0.05
+    turn_residual_scale: 0.9
+    turn_residual_joint_names: !!python/tuple
+    - .*Hip_Yaw.*
+    - .*Hip_Roll.*
+    - .*Ankle_Roll.*
+    turn_snippet_residual_scale: 0.7
+    turn_snippet_residual_joint_names: !!python/tuple
+    - .*Hip_.*
+    - .*Knee.*
+    - .*Ankle.*
+    turn_in_place_v2_residual_scale: 0.55
+    turn_in_place_v2_residual_joint_names: !!python/tuple
+    - .*Hip_.*
+    - .*Knee.*
+    - .*Ankle.*
+events:
+  reset_base:
+    func: !!python/name:mjlab.envs.mdp.events.reset_root_state_uniform ''
+    params:
+      pose_range:
+        x: !!python/tuple
+        - -0.5
+        - 0.5
+        y: !!python/tuple
+        - -0.5
+        - 0.5
+        z: !!python/tuple
+        - 0.01
+        - 0.05
+        yaw: !!python/tuple
+        - -3.14
+        - 3.14
+      velocity_range: {}
+    mode: reset
+    interval_range_s: null
+    is_global_time: false
+    min_step_count_between_reset: 0
+  reset_robot_joints:
+    func: !!python/name:mjlab.envs.mdp.events.reset_joints_by_offset ''
+    params:
+      position_range: !!python/tuple
+      - 0.0
+      - 0.0
+      velocity_range: !!python/tuple
+      - 0.0
+      - 0.0
+      asset_cfg:
+        name: robot
+        joint_names: !!python/tuple
+        - .*
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+    mode: reset
+    interval_range_s: null
+    is_global_time: false
+    min_step_count_between_reset: 0
+  push_robot:
+    func: !!python/name:mjlab.envs.mdp.events.push_by_setting_velocity ''
+    params:
+      velocity_range:
+        x: !!python/tuple
+        - -0.5
+        - 0.5
+        y: !!python/tuple
+        - -0.5
+        - 0.5
+        z: !!python/tuple
+        - -0.4
+        - 0.4
+        roll: !!python/tuple
+        - -0.52
+        - 0.52
+        pitch: !!python/tuple
+        - -0.52
+        - 0.52
+        yaw: !!python/tuple
+        - -0.78
+        - 0.78
+    mode: interval
+    interval_range_s: !!python/tuple
+    - 1.0
+    - 3.0
+    is_global_time: false
+    min_step_count_between_reset: 0
+  foot_friction:
+    func: !!python/name:mjlab.envs.mdp.dr.geom.geom_friction ''
+    params:
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: !!python/tuple
+        - left_foot1_collision
+        - left_foot2_collision
+        - left_foot3_collision
+        - left_foot4_collision
+        - right_foot1_collision
+        - right_foot2_collision
+        - right_foot3_collision
+        - right_foot4_collision
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+      operation: abs
+      ranges: !!python/tuple
+      - 0.3
+      - 1.2
+      shared_random: true
+    mode: startup
+    interval_range_s: null
+    is_global_time: false
+    min_step_count_between_reset: 0
+  encoder_bias:
+    func: !!python/name:mjlab.envs.mdp.dr.joint.encoder_bias ''
+    params:
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+      bias_range: !!python/tuple
+      - -0.015
+      - 0.015
+    mode: startup
+    interval_range_s: null
+    is_global_time: false
+    min_step_count_between_reset: 0
+  base_com:
+    func: !!python/name:mjlab.envs.mdp.dr.body.body_com_offset ''
+    params:
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: !!python/tuple
+        - Trunk
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+      operation: add
+      ranges:
+        0: !!python/tuple
+        - -0.025
+        - 0.025
+        1: !!python/tuple
+        - -0.025
+        - 0.025
+        2: !!python/tuple
+        - -0.03
+        - 0.03
+    mode: startup
+    interval_range_s: null
+    is_global_time: false
+    min_step_count_between_reset: 0
+seed: 42
+sim:
+  nconmax: null
+  njmax: 300
+  ls_parallel: true
+  contact_sensor_maxmatch: 64
+  mujoco:
+    timestep: 0.005
+    integrator: implicitfast
+    impratio: 1.0
+    cone: pyramidal
+    jacobian: auto
+    solver: newton
+    iterations: 10
+    tolerance: 1.0e-08
+    ls_iterations: 20
+    ls_tolerance: 0.01
+    ccd_iterations: 50
+    gravity: !!python/tuple
+    - 0.0
+    - 0.0
+    - -9.81
+    disableflags: !!python/tuple []
+    enableflags: !!python/tuple []
+  nan_guard:
+    enabled: false
+    buffer_size: 100
+    output_dir: /tmp/mjlab/nan_dumps
+    max_envs_to_dump: 5
+viewer:
+  lookat: !!python/tuple
+  - 0.0
+  - 0.0
+  - 0.0
+  distance: 3.0
+  fovy: null
+  elevation: -5.0
+  azimuth: 90.0
+  origin_type: !!python/object/apply:mjlab.viewer.viewer_config.OriginType
+  - 4
+  entity_name: robot
+  body_name: Trunk
+  env_idx: 0
+  max_extra_envs: 2
+  enable_reflections: true
+  enable_shadows: true
+  height: 240
+  width: 320
+episode_length_s: 20.0
+rewards:
+  track_linear_velocity:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.track_linear_velocity ''
+    params:
+      command_name: twist
+      std: 0.5
+    weight: 3.6
+  track_angular_velocity:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.track_angular_velocity ''
+    params:
+      command_name: twist
+      std: 0.7071067811865476
+    weight: 3.4
+  upright:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.upright ''
+    params:
+      std: 0.4472135954999579
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: !!python/tuple
+        - Trunk
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+    weight: 1.5
+  pose:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.variable_posture ''
+    params:
+      asset_cfg:
+        name: robot
+        joint_names: !!python/tuple
+        - .*Hip_.*
+        - .*Knee.*
+        - .*Ankle.*
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+      command_name: twist
+      std_standing:
+        .*: 0.05
+      std_walking:
+        .*Hip_Pitch.*: 0.3
+        .*Hip_Roll.*: 0.1
+        .*Hip_Yaw.*: 0.1
+        .*Knee.*: 0.25
+        .*Ankle_Pitch.*: 0.25
+        .*Ankle_Roll.*: 0.08
+      std_running:
+        .*Hip_Pitch.*: 0.5
+        .*Hip_Roll.*: 0.15
+        .*Hip_Yaw.*: 0.15
+        .*Knee.*: 0.35
+        .*Ankle_Pitch.*: 0.35
+        .*Ankle_Roll.*: 0.1
+      walking_threshold: 0.05
+      running_threshold: 1.5
+    weight: 0.5
+  body_ang_vel:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.body_angular_velocity_penalty ''
+    params:
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: !!python/tuple
+        - Trunk
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+    weight: -0.05
+  angular_momentum:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.angular_momentum_penalty ''
+    params:
+      sensor_name: robot/root_angmom
+    weight: -0.02
+  dof_pos_limits:
+    func: !!python/name:mjlab.envs.mdp.rewards.joint_pos_limits ''
+    params: {}
+    weight: -1.0
+  action_rate_l2:
+    func: !!python/name:mjlab.envs.mdp.rewards.action_rate_l2 ''
+    params: {}
+    weight: -0.03
+  air_time:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.feet_air_time ''
+    params:
+      sensor_name: feet_ground_contact
+      threshold_min: 0.05
+      threshold_max: 0.5
+      command_name: twist
+      command_threshold: 0.5
+    weight: 0.0
+  foot_clearance:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.feet_clearance ''
+    params:
+      target_height: 0.1
+      height_sensor_name: foot_height_scan
+      command_name: twist
+      command_threshold: 0.05
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+    weight: -1.0
+  foot_swing_height:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.feet_swing_height ''
+    params:
+      sensor_name: feet_ground_contact
+      height_sensor_name: foot_height_scan
+      target_height: 0.1
+      command_name: twist
+      command_threshold: 0.05
+    weight: -0.15
+  foot_slip:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.feet_slip ''
+    params:
+      sensor_name: feet_ground_contact
+      command_name: twist
+      command_threshold: 0.05
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+    weight: -0.1
+  soft_landing:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.soft_landing ''
+    params:
+      sensor_name: feet_ground_contact
+      command_name: twist
+      command_threshold: 0.05
+    weight: -1.0e-05
+  memory_contact_validity:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.memory_contact_validity ''
+    params:
+      command_name: memory
+    weight: 0.03
+  memory_phase_validity:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.memory_phase_validity ''
+    params:
+      command_name: memory
+    weight: 0.02
+  memory_retrieval_switch_cost:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.memory_retrieval_switch_cost ''
+    params:
+      command_name: memory
+    weight: -0.01
+  memory_transition_bonus:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.memory_transition_bonus ''
+    params:
+      command_name: memory
+      twist_command_name: twist
+      speed_threshold: 1.5
+      speed_margin: 0.2
+    weight: 0.01
+  self_collisions:
+    func: !!python/name:mjlab.tasks.velocity.mdp.rewards.self_collision_cost ''
+    params:
+      sensor_name: self_collision
+      force_threshold: 10.0
+    weight: -2.0
+  memory_phase_jump_cost:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.memory_phase_jump_cost ''
+    params:
+      command_name: memory
+    weight: -0.05
+  memory_cadence_jump_cost:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.memory_cadence_jump_cost ''
+    params:
+      command_name: memory
+    weight: -0.04
+  foot_midline_crossing:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.foot_midline_crossing_cost ''
+    params:
+      command_name: twist
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      min_lateral_offset: 0.06
+      min_separation: 0.15
+      command_threshold: 0.05
+    weight: -2.0
+  straight_foot_lane:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.straight_foot_lane_cost ''
+    params:
+      command_name: twist
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      target_lateral_offset: 0.095
+      tolerance: 0.02
+      min_forward_speed: 0.3
+      max_lateral_command: 0.05
+      max_yaw_command: 0.1
+    weight: -2.0
+  turn_feet_air_time:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.turn_feet_air_time_bonus ''
+    params:
+      sensor_name: feet_ground_contact
+      command_name: twist
+      threshold_min: 0.05
+      threshold_max: 0.45
+      min_abs_yaw_command: 0.1
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    weight: 0.55
+  turn_reference_swing_height:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.turn_reference_swing_height_bonus ''
+    params:
+      reference_command_name: memory
+      twist_command_name: twist
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      threshold_min: 0.055
+      threshold_max: 0.2
+      min_abs_yaw_command: 0.1
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    weight: 0.75
+  turn_swing_clearance_cost:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.turn_swing_clearance_cost ''
+    params:
+      reference_command_name: memory
+      twist_command_name: twist
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      min_clearance: 0.055
+      min_abs_yaw_command: 0.1
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    weight: -1.0
+  turn_scuff_cost:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.turn_scuff_cost ''
+    params:
+      reference_command_name: memory
+      twist_command_name: twist
+      height_sensor_name: foot_height_scan
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      min_clearance: 0.04
+      planar_speed_threshold: 0.08
+      min_abs_yaw_command: 0.1
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    weight: 0.0
+  forward_reference_swing_height:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.forward_reference_swing_height_bonus ''
+    params:
+      reference_command_name: memory
+      twist_command_name: twist
+      height_sensor_name: foot_height_scan
+      threshold_min: 0.04
+      threshold_max: 0.15
+      min_forward_speed: 0.4
+      max_lateral_command: 0.05
+      max_abs_yaw_command: 0.12
+    weight: 0.2
+  forward_scuff_cost:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.forward_scuff_cost ''
+    params:
+      reference_command_name: memory
+      twist_command_name: twist
+      height_sensor_name: foot_height_scan
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      min_clearance: 0.04
+      forward_speed_threshold: 0.18
+      min_forward_speed: 0.4
+      max_lateral_command: 0.05
+      max_abs_yaw_command: 0.12
+      max_forward_velocity_lag: 0.18
+    weight: -0.8
+  forward_swing_recovery:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.forward_swing_recovery_cost ''
+    params:
+      reference_command_name: memory
+      twist_command_name: twist
+      sensor_name: feet_ground_contact
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      min_recovery_x: -0.06
+      min_air_time: 0.04
+      min_forward_speed: 0.4
+      max_lateral_command: 0.05
+      max_abs_yaw_command: 0.12
+      max_forward_velocity_lag: 0.18
+    weight: -0.8
+  reference_swing_foot_position:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.reference_swing_foot_position_cost ''
+    params:
+      reference_command_name: memory
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: !!python/tuple
+        - left_foot_link
+        - right_foot_link
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      twist_command_name: twist
+      x_weight: 0.8
+      z_weight: 2.0
+      x_tolerance: 0.03
+      z_tolerance: 0.015
+      min_forward_speed: 0.4
+      max_lateral_command: 0.05
+      max_abs_yaw_command: 0.12
+      max_forward_velocity_lag: 0.18
+    weight: -0.6
+  turn_foot_separation:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.turn_foot_separation_cost ''
+    params:
+      command_name: twist
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      max_separation: 0.22
+      min_abs_yaw_command: 0.1
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    weight: -1.0
+  straight_linear_velocity_tracking:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.straight_linear_velocity_tracking_bonus ''
+    params:
+      command_name: twist
+      std: 0.45
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+      min_forward_speed: 0.4
+      max_lateral_command: 0.05
+      max_abs_yaw_command: 0.12
+    weight: 1.2
+  turn_yaw_velocity_tracking:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.rewards.turn_yaw_velocity_tracking_bonus ''
+    params:
+      command_name: twist
+      std: 0.22
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: null
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: false
+      min_abs_yaw_command: 0.1
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    weight: 1.6
+terminations:
+  time_out:
+    func: !!python/name:mjlab.envs.mdp.terminations.time_out ''
+    params: {}
+    time_out: true
+  fell_over:
+    func: !!python/name:mjlab.envs.mdp.terminations.bad_orientation ''
+    params:
+      limit_angle: 1.2217304763960306
+    time_out: false
+commands:
+  twist:
+    resampling_time_range: !!python/tuple
+    - 3.0
+    - 8.0
+    debug_vis: true
+    entity_name: robot
+    heading_command: false
+    heading_control_stiffness: 0.5
+    rel_standing_envs: 0.1
+    rel_heading_envs: 0.0
+    rel_world_envs: 0.0
+    rel_forward_envs: 0.15
+    rel_turn_in_place_envs: 0.2
+    init_velocity_prob: 0.0
+    turn_in_place_lin_vel_x_max: 0.12
+    turn_in_place_lin_vel_y_max: 0.03
+    turn_in_place_ang_vel_z_min: 0.1
+    ranges:
+      lin_vel_x: !!python/tuple
+      - 0.0
+      - 1.0
+      lin_vel_y: !!python/tuple
+      - 0.0
+      - 0.0
+      ang_vel_z: !!python/tuple
+      - -0.6
+      - 0.6
+      heading: null
+    viz:
+      z_offset: 1.0
+      scale: 0.5
+  memory:
+    resampling_time_range: !!python/tuple
+    - 0.1
+    - 0.1
+    debug_vis: false
+    entity_name: robot
+    memory_file: /workspace/mjlab/artifacts/locomotion_memory/booster_k1/locomotion_memory.npz
+    require_memory_file: true
+    twist_command_name: twist
+    contact_sensor_name: feet_ground_contact
+    proposal_dim: 24
+    topk_task_candidates: 256
+    hysteresis_margin: 0.15
+    hysteresis_steps: 2
+    transition_speed_threshold: 1.5
+    transition_speed_margin: 0.2
+    task_weight: 1.0
+    phase_weight: 0.8
+    contact_weight: 1.5
+    connect_weight: 1.2
+    quality_weight: 0.3
+    transition_weight: 0.7
+    task_weight_xy: 1.2
+    task_weight_yaw: 1.6
+    connect_velocity_scale: 0.1
+    min_snippet_hold_s: 0.25
+    max_snippet_hold_s: 0.6
+    blocked_resample_retry_s: 0.02
+    phase_boundary_tolerance: 0.08
+    event_gated_switching: true
+    turn_intent_weight: 2.8
+    cadence_weight: 0.4
+    cadence_scale: 0.25
+    turn_intent_min_yaw_command: 0.1
+    turn_intent_max_forward_speed: 0.25
+    turn_intent_max_lateral_speed: 0.05
+    turn_intent_in_place_speed_scale: 0.12
+    turn_intent_yaw_rate_scale: 0.35
+    turn_intent_min_cadence: 1.3
+    prioritize_pivot_candidates: true
+    pivot_weight: 1.4
+    pivot_nonmatch_penalty: 0.75
+    pivot_source_prefix: pivot_
+    prioritize_turn_in_place_v2_candidates: false
+    turn_in_place_v2_weight: 0.0
+    turn_in_place_v2_nonmatch_penalty: 0.75
+    turn_in_place_v2_source_prefix: turn_in_place_v2_
+curriculum:
+  command_vel:
+    func: !!python/name:mjlab.tasks.velocity.mdp.curriculums.commands_vel ''
+    params:
+      command_name: twist
+      velocity_stages:
+      - step: 0
+        lin_vel_x: !!python/tuple
+        - 0.0
+        - 1.0
+        lin_vel_y: !!python/tuple
+        - 0.0
+        - 0.0
+        ang_vel_z: !!python/tuple
+        - -0.6
+        - 0.6
+      - step: 192000
+        lin_vel_x: !!python/tuple
+        - 0.0
+        - 1.6
+        lin_vel_y: !!python/tuple
+        - 0.0
+        - 0.0
+        ang_vel_z: !!python/tuple
+        - -0.6
+        - 0.6
+metrics:
+  mean_action_acc:
+    func: !!python/name:mjlab.envs.mdp.metrics.mean_action_acc ''
+    params: {}
+    per_substep: false
+    reduce: mean
+  straight_foot_lane_violation:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.straight_foot_lane_violation ''
+    params:
+      command_name: twist
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      target_lateral_offset: 0.095
+      tolerance: 0.02
+      min_forward_speed: 0.3
+      max_lateral_command: 0.05
+      max_yaw_command: 0.1
+    per_substep: false
+    reduce: mean
+  turn_step_rate:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.turn_step_rate ''
+    params:
+      sensor_name: feet_ground_contact
+      command_name: twist
+      min_abs_yaw_command: 0.1
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    per_substep: false
+    reduce: mean
+  low_yaw_turn_active:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.low_yaw_turn_active ''
+    params:
+      command_name: twist
+      min_abs_yaw_command: 0.1
+      max_abs_yaw_command: 0.25
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    per_substep: false
+    reduce: mean
+  low_yaw_turn_yaw_error:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.low_yaw_turn_yaw_error ''
+    params:
+      command_name: twist
+      min_abs_yaw_command: 0.1
+      max_abs_yaw_command: 0.25
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    per_substep: false
+    reduce: mean
+  low_yaw_turn_step_rate:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.low_yaw_turn_step_rate ''
+    params:
+      sensor_name: feet_ground_contact
+      command_name: twist
+      min_abs_yaw_command: 0.1
+      max_abs_yaw_command: 0.25
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    per_substep: false
+    reduce: mean
+  low_yaw_turn_air_time_mean:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.low_yaw_turn_air_time_mean ''
+    params:
+      sensor_name: feet_ground_contact
+      command_name: twist
+      min_abs_yaw_command: 0.1
+      max_abs_yaw_command: 0.25
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    per_substep: false
+    reduce: mean
+  low_yaw_turn_foot_separation:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.low_yaw_turn_foot_separation ''
+    params:
+      asset_cfg:
+        name: robot
+        joint_names: null
+        joint_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        body_names: null
+        body_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        geom_names: null
+        geom_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        site_names: !!python/tuple
+        - left_foot
+        - right_foot
+        site_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        actuator_names: null
+        actuator_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        tendon_names: null
+        tendon_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        camera_names: null
+        camera_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        light_names: null
+        light_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        material_names: null
+        material_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        pair_names: null
+        pair_ids: !!python/object/apply:builtins.slice
+        - null
+        - null
+        - null
+        preserve_order: true
+      command_name: twist
+      min_abs_yaw_command: 0.1
+      max_abs_yaw_command: 0.25
+      max_forward_speed: 0.25
+      max_lateral_command: 0.05
+    per_substep: false
+    reduce: mean
+  cadence_interval_cv:
+    func: !!python/name:mjlab.tasks.locomotion_memory.mdp.metrics.cadence_interval_cv ''
+    params:
+      sensor_name: feet_ground_contact
+      command_name: twist
+      command_threshold: 0.1
+      min_intervals_per_foot: 2
+    per_substep: false
+    reduce: last
+is_finite_horizon: false
+scale_rewards_by_dt: true

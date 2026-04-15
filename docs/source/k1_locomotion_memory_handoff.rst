@@ -48,6 +48,20 @@ The default generated memory assets live under:
 If these artifacts are missing or stale, rebuild them from the retargeted CSVs
 before training.
 
+Curated generated artifacts are intentionally tracked in Git under
+``artifacts/locomotion_memory/booster_k1``:
+
+- ``locomotion_memory.npz``: current default structured memory.
+- ``artifact_manifest.json``: summary of the tracked generated artifacts.
+- ``evaluations/*.json``: small FK evaluation outputs for baseline comparison.
+- ``policies/tracking_balance_v3_steady_forward_v1_model_29999.pt``: current
+  trained baseline checkpoint for immediate play/evaluation.
+- ``policies/tracking_balance_v3_steady_forward_v1.onnx``: exported baseline
+  policy.
+
+The full ``logs/``, ``wandb/``, converted motion directory, and intermediate
+checkpoints are deliberately not tracked.
+
 Current implementation surface
 ------------------------------
 
@@ -160,6 +174,16 @@ Use Viser for qualitative inspection:
      --num-envs 1 \
      --no-terminations True
 
+To replay the tracked v3 baseline without a local training log directory:
+
+.. code-block:: bash
+
+   uv run play Mjlab-LocomotionMemory-Flat-Booster-K1 \
+     --checkpoint-file artifacts/locomotion_memory/booster_k1/policies/tracking_balance_v3_steady_forward_v1_model_29999.pt \
+     --viewer viser \
+     --num-envs 1 \
+     --no-terminations True
+
 Inspect at least these command cases:
 
 - straight forward walking at ``vx = 0.5``, ``1.0``, and ``1.5``;
@@ -213,6 +237,12 @@ Local W&B run:
 FK output:
 
 ``logs/rsl_rl/k1_locomotion_memory/2026-04-14_18-37-50_k1_locomotion_memory_tracking_balance_v3_steady_forward_v1/fk_eval_research_model_29999.json``
+
+Tracked artifact copies:
+
+- ``artifacts/locomotion_memory/booster_k1/policies/tracking_balance_v3_steady_forward_v1_model_29999.pt``
+- ``artifacts/locomotion_memory/booster_k1/policies/tracking_balance_v3_steady_forward_v1.onnx``
+- ``artifacts/locomotion_memory/booster_k1/evaluations/tracking_balance_v3_steady_forward_v1_fk_eval_research_model_29999.json``
 
 Important v3 outcome:
 
