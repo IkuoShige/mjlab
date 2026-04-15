@@ -8,17 +8,6 @@ Upcoming version (not yet released)
 Added
 ^^^^^
 
-- Added :class:`~mjlab.managers.RecorderManager` for logging observations,
-  actions, or arbitrary environment data during rollouts. Implement a
-  :class:`~mjlab.managers.RecorderTerm` subclass and register it in the
-  ``recorders`` dict on ``ManagerBasedRlEnvCfg``. The manager provides
-  ``record_pre_reset``, ``record_post_reset``, and ``record_post_step``
-  lifecycle hooks with no opinion on how data is stored.
-- Added :func:`~mjlab.envs.mdp.curriculums.termination_curriculum` for
-  scheduling changes to termination term parameters during training,
-  matching the existing ``reward_curriculum`` pattern. Both now share a
-  single internal engine with init-time validation of stage ordering,
-  field existence, and param keys.
 - Added ``reduce`` field to ``MetricsTermCfg``. Setting ``reduce="last"``
   reports the value from the final step of the episode rather than the
   episode mean, which is useful for binary success metrics.
@@ -65,6 +54,49 @@ Added
   alongside RGB and depth, and a multi-cube goal-conditioned lifting task
   (``Mjlab-Multi-Cube-Seg-Yam``) that uses it (:issue:`862`).
   Contribution by @pthangeda.
+- Added Booster K1 robot support to the asset zoo, plus Booster K1 velocity
+  tasks (``Mjlab-Velocity-Flat-Booster-K1`` and
+  ``Mjlab-Velocity-Rough-Booster-K1``), Booster K1 tracking tasks
+  (``Mjlab-Tracking-Flat-Booster-K1`` and
+  ``Mjlab-Tracking-Flat-Booster-K1-No-State-Estimation``), and ``csv_to_npz``
+  support for ``--robot k1`` when converting K1 retargeted CSV motion files.
+- Added experimental Booster K1 locomotion-memory task scaffolds
+  (``Mjlab-LocomotionMemory-Flat-Booster-K1`` and
+  ``Mjlab-LocomotionMemory-Rough-Booster-K1``) that extend the velocity
+  execution stack with a dedicated proposal command/observation surface for
+  future retrieval-conditioned control.
+- Added ``build-locomotion-memory`` for turning converted motion clips into a
+  structured snippet-memory database that the locomotion-memory task can load
+  through ``env.commands.memory.memory_file``.
+- Expanded the locomotion-memory observation surface with snippet metadata
+  features (phase/trust/contact/gait statistics) so actor and critic policies
+  can condition on retrieved memory context without hard reference tracking.
+- Added proposal-conditioned residual joint actions to the experimental
+  locomotion-memory task so retrieved snippet joint poses act as a nominal
+  reference and the policy outputs residual corrections instead of tracking a
+  hard target directly.
+- Added first-pass retrieval-validity shaping rewards to the locomotion-memory
+  task for contact validity, phase validity, retrieval switch cost, and
+  transition-snippet bonus near the walk-run boundary.
+- Added ``prepare-k1-locomotion-memory`` for building a local Booster K1
+  locomotion-memory database directly from the retargeted CSV corpus, and
+  made ``csv_to_npz`` save local NPZ files by default instead of requiring a
+  W&B artifact upload path.
+- Added ``prepare-k1-locomotion-memory`` for building a first-pass Booster K1
+  locomotion-memory database locally from the retargeted CSV set under
+  ``/workspace/k1_retarget/motions_k1/k1_fixed``.
+- Locomotion-memory training now fails fast when the memory database is
+  missing or mismatched, and the train entrypoint auto-discovers the default
+  prepared K1 memory file when it exists.
+- Iterated on the experimental Booster K1 locomotion-memory stack with K1
+  retarget conversion fixes (including ``wxyz`` root quaternion handling),
+  vendored asset alignment, upper-body residual lockout, better collision
+  coverage, straight-walk foot-lane shaping, turn-intent retrieval bias, and a
+  minimum snippet hold time to reduce cadence-breaking retrieval churn.
+- Added event-gated cadence continuity controls to the experimental Booster K1
+  locomotion-memory stack, including phase/cadence jump penalties during
+  snippet switches and turn-aware residual attenuation so low-speed turning
+  executes closer to the retrieved stepping proposal.
 
 Changed
 ^^^^^^^
@@ -101,6 +133,8 @@ Changed
 - Removed ``EntityData.generalized_force``. The property was bugged (indexed
   free joint DOFs instead of articulated DOFs) and the name was ambiguous.
   Use ``qfrc_actuator`` or ``qfrc_external`` instead (:issue:`776`).
+- Experimental locomotion-memory tasks now default to ``tensorboard`` logging
+  so local offline training works without a mandatory W&B handshake.
 
 Fixed
 ^^^^^

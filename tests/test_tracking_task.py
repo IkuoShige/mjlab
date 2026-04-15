@@ -2,7 +2,7 @@
 
 import pytest
 
-from mjlab.asset_zoo.robots import G1_ACTION_SCALE
+from mjlab.asset_zoo.robots import G1_ACTION_SCALE, K1_ACTION_SCALE
 from mjlab.envs.mdp.actions import JointPositionActionCfg
 from mjlab.tasks.registry import list_tasks, load_env_cfg
 from mjlab.tasks.tracking.mdp import MotionCommandCfg
@@ -18,6 +18,12 @@ def tracking_task_ids() -> list[str]:
 def g1_tracking_task_ids(tracking_task_ids: list[str]) -> list[str]:
   """Get all G1 tracking task IDs."""
   return [t for t in tracking_task_ids if "G1" in t]
+
+
+@pytest.fixture(scope="module")
+def k1_tracking_task_ids(tracking_task_ids: list[str]) -> list[str]:
+  """Get all K1 tracking task IDs."""
+  return [t for t in tracking_task_ids if "K1" in t]
 
 
 def test_tracking_tasks_have_motion_command(tracking_task_ids: list[str]) -> None:
@@ -50,26 +56,29 @@ def test_tracking_tasks_have_self_collision_sensor(
 
 def test_tracking_no_state_estimation_observations() -> None:
   """No-state-estimation tasks remove observations that depend on state estimation."""
-  task_id = "Mjlab-Tracking-Flat-Unitree-G1-No-State-Estimation"
+  task_ids = [
+    "Mjlab-Tracking-Flat-Unitree-G1-No-State-Estimation",
+    "Mjlab-Tracking-Flat-Booster-K1-No-State-Estimation",
+  ]
 
-  # Test both training and play modes
-  for play_mode in [False, True]:
-    cfg = load_env_cfg(task_id, play=play_mode)
-    mode_str = "play mode" if play_mode else "training mode"
+  for task_id in task_ids:
+    for play_mode in [False, True]:
+      cfg = load_env_cfg(task_id, play=play_mode)
+      mode_str = "play mode" if play_mode else "training mode"
 
-    assert "actor" in cfg.observations, (
-      f"Task {task_id} ({mode_str}) missing policy observations"
-    )
-    actor_terms = cfg.observations["actor"].terms
+      assert "actor" in cfg.observations, (
+        f"Task {task_id} ({mode_str}) missing policy observations"
+      )
+      actor_terms = cfg.observations["actor"].terms
 
-    assert "motion_anchor_pos_b" not in actor_terms, (
-      f"Task {task_id} ({mode_str}) has motion_anchor_pos_b in policy, "
-      "expected it to be removed for no-state-estimation variant"
-    )
-    assert "base_lin_vel" not in actor_terms, (
-      f"Task {task_id} ({mode_str}) has base_lin_vel in policy, "
-      "expected it to be removed for no-state-estimation variant"
-    )
+      assert "motion_anchor_pos_b" not in actor_terms, (
+        f"Task {task_id} ({mode_str}) has motion_anchor_pos_b in policy, "
+        "expected it to be removed for no-state-estimation variant"
+      )
+      assert "base_lin_vel" not in actor_terms, (
+        f"Task {task_id} ({mode_str}) has base_lin_vel in policy, "
+        "expected it to be removed for no-state-estimation variant"
+      )
 
 
 def test_tracking_play_disables_rsi_randomization() -> None:
@@ -77,6 +86,8 @@ def test_tracking_play_disables_rsi_randomization() -> None:
   tracking_tasks = [
     "Mjlab-Tracking-Flat-Unitree-G1",
     "Mjlab-Tracking-Flat-Unitree-G1-No-State-Estimation",
+    "Mjlab-Tracking-Flat-Booster-K1",
+    "Mjlab-Tracking-Flat-Booster-K1-No-State-Estimation",
   ]
 
   for task_id in tracking_tasks:
@@ -102,6 +113,8 @@ def test_tracking_play_uses_start_sampling_mode() -> None:
   tracking_tasks = [
     "Mjlab-Tracking-Flat-Unitree-G1",
     "Mjlab-Tracking-Flat-Unitree-G1-No-State-Estimation",
+    "Mjlab-Tracking-Flat-Booster-K1",
+    "Mjlab-Tracking-Flat-Booster-K1-No-State-Estimation",
   ]
 
   for task_id in tracking_tasks:
@@ -131,4 +144,21 @@ def test_g1_tracking_has_correct_action_scale(g1_tracking_task_ids: list[str]) -
 
     assert joint_pos_action.scale == G1_ACTION_SCALE, (
       f"Task {task_id} action scale mismatch, expected G1_ACTION_SCALE"
+    )
+
+
+def test_k1_tracking_has_correct_action_scale(k1_tracking_task_ids: list[str]) -> None:
+  """K1 tracking tasks should use K1_ACTION_SCALE."""
+  for task_id in k1_tracking_task_ids:
+    cfg = load_env_cfg(task_id)
+
+    assert "joint_pos" in cfg.actions, f"Task {task_id} missing 'joint_pos' action"
+
+    joint_pos_action = cfg.actions["joint_pos"]
+    assert isinstance(joint_pos_action, JointPositionActionCfg), (
+      f"Task {task_id} joint_pos action is not JointPositionActionCfg"
+    )
+
+    assert joint_pos_action.scale == K1_ACTION_SCALE, (
+      f"Task {task_id} action scale mismatch, expected K1_ACTION_SCALE"
     )

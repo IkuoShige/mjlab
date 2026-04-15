@@ -45,6 +45,7 @@ class UniformVelocityCommand(CommandTerm):
     self.is_standing_env = torch.zeros_like(self.is_heading_env)
     self.is_world_env = torch.zeros_like(self.is_heading_env)
     self.is_forward_env = torch.zeros_like(self.is_heading_env)
+    self.is_turn_in_place_env = torch.zeros_like(self.is_heading_env)
 
     self.metrics["error_vel_xy"] = torch.zeros(self.num_envs, device=self.device)
     self.metrics["error_vel_yaw"] = torch.zeros(self.num_envs, device=self.device)
@@ -97,6 +98,42 @@ class UniformVelocityCommand(CommandTerm):
       )
       self.vel_command_b[fwd_ids, 1] = 0.0
       self.vel_command_b[fwd_ids, 2] = 0.0
+
+    # Turn-in-place envs: near-zero linear velocity, non-trivial yaw rate.
+    self.is_turn_in_place_env[env_ids] = (~self.is_standing_env[env_ids]) & (
+      r.uniform_(0.0, 1.0) <= self.cfg.rel_turn_in_place_envs
+    )
+    turn_ids = env_ids[self.is_turn_in_place_env[env_ids]]
+    if len(turn_ids) > 0:
+      self.is_forward_env[turn_ids] = False
+      self.vel_command_b[turn_ids, 0] = torch.empty(
+        len(turn_ids), device=self.device
+      ).uniform_(0.0, self.cfg.turn_in_place_lin_vel_x_max)
+      self.vel_command_b[turn_ids, 1] = torch.empty(
+        len(turn_ids), device=self.device
+      ).uniform_(
+        -self.cfg.turn_in_place_lin_vel_y_max,
+        self.cfg.turn_in_place_lin_vel_y_max,
+      )
+      max_yaw = max(
+        abs(self.cfg.ranges.ang_vel_z[0]), abs(self.cfg.ranges.ang_vel_z[1])
+      )
+      min_yaw = min(self.cfg.turn_in_place_ang_vel_z_min, max_yaw)
+      yaw_mag = torch.empty(len(turn_ids), device=self.device).uniform_(
+        min_yaw, max_yaw
+      )
+      yaw_sign = torch.sign(self.vel_command_b[turn_ids, 2])
+      random_sign = torch.where(
+        torch.rand(len(turn_ids), device=self.device) < 0.5,
+        -torch.ones(len(turn_ids), device=self.device),
+        torch.ones(len(turn_ids), device=self.device),
+      )
+      yaw_sign = torch.where(yaw_sign == 0.0, random_sign, yaw_sign)
+      self.vel_command_b[turn_ids, 2] = torch.clamp(
+        yaw_sign * yaw_mag,
+        min=self.cfg.ranges.ang_vel_z[0],
+        max=self.cfg.ranges.ang_vel_z[1],
+      )
 
     init_vel_mask = r.uniform_(0.0, 1.0) < self.cfg.init_velocity_prob
     init_vel_env_ids = env_ids[init_vel_mask]
@@ -153,35 +190,39 @@ class UniformVelocityCommand(CommandTerm):
     ranges = self.cfg.ranges
 
     axes = [
-      ("lin_vel_x", ranges.lin_vel_x[1]),
-      ("lin_vel_y", ranges.lin_vel_y[1]),
-      ("ang_vel_z", ranges.ang_vel_z[1]),
+      ("lin_vel_x", ranges.lin_vel_x),
+      ("lin_vel_y", ranges.lin_vel_y),
+      ("ang_vel_z", ranges.ang_vel_z),
     ]
     sliders: list = []
 
     with server.gui.add_folder(name.capitalize()):
       enabled = server.gui.add_checkbox("Enable", initial_value=False)
 
-      for label, max_val in axes:
+      for label, axis_range in axes:
+        lower, upper = axis_range
+        max_val = max(abs(lower), abs(upper))
         max_input = server.gui.add_slider(
           f"Max {label}",
           initial_value=max_val,
           step=0.1,
-          min=0.1,
+          min=0.0,
           max=10.0,
         )
+        slider_min, slider_max = _joystick_slider_bounds(lower, upper, max_val)
+        initial_value = 0.0 if slider_min <= 0.0 <= slider_max else slider_min
         slider = server.gui.add_slider(
           label,
-          min=-max_val,
-          max=max_val,
+          min=slider_min,
+          max=slider_max,
           step=0.05,
-          initial_value=0.0,
+          initial_value=initial_value,
         )
 
         @max_input.on_update
-        def _(_ev, _s=slider, _m=max_input) -> None:
-          _s.min = -_m.value
-          _s.max = _m.value
+        def _(_ev, _s=slider, _m=max_input, _lower=lower, _upper=upper) -> None:
+          _s.min, _s.max = _joystick_slider_bounds(_lower, _upper, _m.value)
+          _s.value = min(max(_s.value, _s.min), _s.max)
 
         sliders.append(slider)
 
@@ -277,6 +318,23 @@ class UniformVelocityCommand(CommandTerm):
       )
 
 
+def _joystick_slider_bounds(
+  lower: float,
+  upper: float,
+  max_magnitude: float,
+) -> tuple[float, float]:
+  """Map an axis command range to GUI slider bounds.
+
+  The "Max ..." slider controls only the magnitude. The sign constraints from the
+  task config are preserved so forward-only or fixed-zero axes stay valid.
+  """
+  if lower >= 0.0:
+    return 0.0, max_magnitude
+  if upper <= 0.0:
+    return -max_magnitude, 0.0
+  return -max_magnitude, max_magnitude
+
+
 @dataclass(kw_only=True)
 class UniformVelocityCommandCfg(CommandTermCfg):
   entity_name: str
@@ -292,7 +350,13 @@ class UniformVelocityCommandCfg(CommandTermCfg):
   """Fraction of environments that receive forward-only commands (positive
   lin_vel_x, zero lin_vel_y and ang_vel_z). Increases training coverage for
   straight-line walking, which is important for stair climbing."""
+  rel_turn_in_place_envs: float = 0.0
+  """Fraction of environments that receive near-zero linear velocity with a
+  non-trivial yaw-rate command to train stepping turns in place."""
   init_velocity_prob: float = 0.0
+  turn_in_place_lin_vel_x_max: float = 0.1
+  turn_in_place_lin_vel_y_max: float = 0.05
+  turn_in_place_ang_vel_z_min: float = 0.2
 
   @dataclass
   class Ranges:

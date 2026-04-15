@@ -13,6 +13,12 @@ import tyro
 
 from mjlab.envs import ManagerBasedRlEnv
 from mjlab.rl import MjlabOnPolicyRunner, RslRlVecEnvWrapper
+from mjlab.tasks.locomotion_memory.mdp import LocomotionMemoryCommandCfg
+from mjlab.tasks.locomotion_memory.memory_db import (
+  DEFAULT_K1_MEMORY_FILE,
+  K1_MEMORY_FILE_ENV_VAR,
+  discover_k1_memory_file,
+)
 from mjlab.tasks.registry import list_tasks, load_env_cfg, load_rl_cfg, load_runner_cls
 from mjlab.tasks.tracking.mdp import MotionCommandCfg
 from mjlab.utils.os import get_wandb_checkpoint_path
@@ -38,6 +44,7 @@ class PlayConfig:
   """Optional checkpoint name within the W&B run to load (e.g. 'model_4000.pt')."""
   checkpoint_file: str | None = None
   motion_file: str | None = None
+  memory_file: str | None = None
   num_envs: int | None = None
   device: str | None = None
   video: bool = False
@@ -72,6 +79,9 @@ def run_play(task_id: str, cfg: PlayConfig):
   # Check if this is a tracking task by checking for motion command.
   is_tracking_task = "motion" in env_cfg.commands and isinstance(
     env_cfg.commands["motion"], MotionCommandCfg
+  )
+  is_locomotion_memory_task = "memory" in env_cfg.commands and isinstance(
+    env_cfg.commands["memory"], LocomotionMemoryCommandCfg
   )
 
   if is_tracking_task and cfg._demo_mode:
@@ -125,6 +135,27 @@ def run_play(task_id: str, cfg: PlayConfig):
           if art is None:
             raise RuntimeError("No motion artifact found in the run.")
           motion_cmd.motion_file = str(Path(art.download()) / "motion.npz")
+
+  if is_locomotion_memory_task:
+    memory_cmd = env_cfg.commands["memory"]
+    assert isinstance(memory_cmd, LocomotionMemoryCommandCfg)
+
+    if cfg.memory_file is not None and Path(cfg.memory_file).exists():
+      print(f"[INFO]: Using local locomotion memory: {cfg.memory_file}")
+      memory_cmd.memory_file = cfg.memory_file
+    elif not memory_cmd.memory_file or not Path(memory_cmd.memory_file).is_file():
+      discovered = discover_k1_memory_file()
+      if discovered:
+        memory_cmd.memory_file = discovered
+        print(f"[INFO]: Using discovered locomotion memory: {memory_cmd.memory_file}")
+      elif memory_cmd.require_memory_file:
+        raise ValueError(
+          "Locomotion-memory tasks require a valid memory database.\n"
+          "Build one with `prepare-k1-locomotion-memory` or provide:\n"
+          "  --memory-file /path/to/memory.npz\n"
+          f"  export {K1_MEMORY_FILE_ENV_VAR}=/path/to/memory.npz\n"
+          f"Default local target after preparation: {DEFAULT_K1_MEMORY_FILE}"
+        )
 
   log_dir: Path | None = None
   resume_path: Path | None = None

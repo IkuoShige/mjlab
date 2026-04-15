@@ -71,7 +71,6 @@ Table of Contents
    source/randomization
    source/curriculum
    source/metrics
-   source/recorders
 
 .. toctree::
    :maxdepth: 1
@@ -98,6 +97,9 @@ Table of Contents
    source/migration_isaac_lab
    source/faq
    source/research
+   source/k1_locomotion_memory_status
+   source/k1_locomotion_memory_handoff
+   source/k1_locomotion_memory_roadmap
    source/changelog
 
 License & citation

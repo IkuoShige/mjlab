@@ -1,0 +1,5 @@
+このmjlabに, 実装したい, 研究アイデアをresearch.mdに書き出した. 抽象的にいうと, kimodoというパッケージから生成した人間らしい歩容のmotionをk1に変換した大量のmotionを使って, 人間らしく, 速く動ける, 歩くという点において様々な表現ができるlocomotion policyを開発したい. 参考になりそうなのとk1のmotionは, material.mdに書いてある.
+
+Using Everything Claude Code with all agents and skills. Research-first approach. /plan このmjlabに, 実装したい, 研究アイデアをresearch.mdに書き出した. 抽象的にいうと,
+  kimodoというパッケージから生成した人間らしい歩容のmotionをk1に変換した大量のmotionを使って, 人間らしく, 速く動ける, 歩くという点において様々な表現ができるlocomotion
+  policyを開発したい. 参考になりそうなのとk1のmotionは, material.mdに書いてある. 対象ロボットはk1である.

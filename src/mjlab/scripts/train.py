@@ -12,6 +12,12 @@ import tyro
 
 from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg
 from mjlab.rl import MjlabOnPolicyRunner, RslRlBaseRunnerCfg, RslRlVecEnvWrapper
+from mjlab.tasks.locomotion_memory.mdp import LocomotionMemoryCommandCfg
+from mjlab.tasks.locomotion_memory.memory_db import (
+  DEFAULT_K1_MEMORY_FILE,
+  K1_MEMORY_FILE_ENV_VAR,
+  discover_k1_memory_file,
+)
 from mjlab.tasks.registry import list_tasks, load_env_cfg, load_rl_cfg, load_runner_cls
 from mjlab.tasks.tracking.mdp import MotionCommandCfg
 from mjlab.utils.gpu import select_gpus
@@ -71,6 +77,9 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
   is_tracking_task = "motion" in cfg.env.commands and isinstance(
     cfg.env.commands["motion"], MotionCommandCfg
   )
+  is_locomotion_memory_task = "memory" in cfg.env.commands and isinstance(
+    cfg.env.commands["memory"], LocomotionMemoryCommandCfg
+  )
 
   if is_tracking_task:
     motion_cmd = cfg.env.commands["motion"]
@@ -94,6 +103,26 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
         "For tracking tasks, provide either:\n"
         "  --registry-name your-org/motions/motion-name (download from WandB)\n"
         "  --env.commands.motion.motion-file /path/to/motion.npz (local file)"
+      )
+
+  if is_locomotion_memory_task:
+    memory_cmd = cfg.env.commands["memory"]
+    assert isinstance(memory_cmd, LocomotionMemoryCommandCfg)
+    discovered = discover_k1_memory_file()
+    if (
+      not memory_cmd.memory_file or not Path(memory_cmd.memory_file).is_file()
+    ) and discovered:
+      memory_cmd.memory_file = discovered
+      print(f"[INFO] Using discovered locomotion memory: {memory_cmd.memory_file}")
+    if memory_cmd.require_memory_file and (
+      not memory_cmd.memory_file or not Path(memory_cmd.memory_file).is_file()
+    ):
+      raise ValueError(
+        "Locomotion-memory tasks require a valid memory database.\n"
+        "Build one with `prepare-k1-locomotion-memory` or provide:\n"
+        "  --env.commands.memory.memory-file /path/to/memory.npz\n"
+        f"  export {K1_MEMORY_FILE_ENV_VAR}=/path/to/memory.npz\n"
+        f"Default local target after preparation: {DEFAULT_K1_MEMORY_FILE}"
       )
 
   # Enable NaN guard if requested.

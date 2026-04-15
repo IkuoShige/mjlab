@@ -70,7 +70,23 @@ uv run train Mjlab-Tracking-Flat-Unitree-G1 --registry-name your-org/motions/mot
 uv run play Mjlab-Tracking-Flat-Unitree-G1 --wandb-run-path your-org/mjlab/run-id
 ```
 
-### 3. Sanity-check with Dummy Agents
+### 3. K1 Locomotion Memory
+
+Prepare a local K1 locomotion-memory database from the retargeted CSV corpus:
+
+```bash
+uv run prepare-k1-locomotion-memory --device cpu --output-fps 30
+```
+
+Then train the K1 locomotion-memory policy. By default the task will look for the
+prepared file at the local K1 memory path; you can also override it explicitly with
+`--env.commands.memory.memory-file` or `MJLAB_K1_LOCOMOTION_MEMORY_FILE`.
+
+```bash
+uv run train Mjlab-LocomotionMemory-Flat-Booster-K1 --env.scene.num-envs 4096
+```
+
+### 4. Sanity-check with Dummy Agents
 
 Use built-in agents to sanity check your MDP before training:
 
