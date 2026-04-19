@@ -70,7 +70,62 @@ uv run train Mjlab-Tracking-Flat-Unitree-G1 --registry-name your-org/motions/mot
 uv run play Mjlab-Tracking-Flat-Unitree-G1 --wandb-run-path your-org/mjlab/run-id
 ```
 
-### 3. Sanity-check with Dummy Agents
+### 3. Humanoid Soccer (PAiD Framework)
+
+Train a Unitree G1 humanoid to kick a soccer ball using the [PAiD progressive framework](https://arxiv.org/abs/2602.05310). Requires motion data converted from Isaac Lab format (see below).
+
+**Motion data preparation:**
+
+```bash
+# Convert Isaac Lab motions (BFS ordering) to MuJoCo (DFS ordering).
+uv run python scripts/tools/convert_isaaclab_motion.py \
+    --input motions/soccer-standard \
+    --output motions/soccer-standard-mj
+```
+
+**Stage 2 — Kick training (from scratch, ~12h):**
+
+```bash
+WANDB_MODE=disabled uv run train Mjlab-Soccer-Kick-Flat-Unitree-G1 \
+    --env.scene.num-envs 4096 --agent.max-iterations 100000
+```
+
+**Stage 2.5 — Moving ball (fine-tune from kick, ~2.5h):**
+
+```bash
+WANDB_MODE=disabled uv run train Mjlab-Soccer-Moving-Flat-Unitree-G1 \
+    --env.scene.num-envs 4096 \
+    --agent.resume True --agent.load-run <kick-run-dir> \
+    --agent.load-checkpoint model_99999.pt --agent.max-iterations 20000
+```
+
+**Stage 3a — Teacher with privileged observations (from scratch, ~12h):**
+
+```bash
+WANDB_MODE=disabled uv run train Mjlab-Soccer-Teacher-Flat-Unitree-G1 \
+    --env.scene.num-envs 4096 --agent.max-iterations 100000
+```
+
+**Stage 3c — Student-Teacher distillation (from teacher checkpoint, ~6h):**
+
+```bash
+WANDB_MODE=disabled uv run train Mjlab-Soccer-Distill-Flat-Unitree-G1 \
+    --env.scene.num-envs 4096 \
+    --agent.resume True --agent.load-run <teacher-run-dir> \
+    --agent.load-checkpoint model_99999.pt --agent.max-iterations 50000
+```
+
+**Play / evaluate a trained policy:**
+
+```bash
+uv run play Mjlab-Soccer-Kick-Flat-Unitree-G1 \
+    --checkpoint-file logs/rsl_rl/g1_soccer/<run-dir>/model_99999.pt \
+    --num-envs 4 --viewer viser
+```
+
+Replace `Mjlab-Soccer-Kick-Flat-Unitree-G1` with the appropriate task ID for each stage (`Mjlab-Soccer-Moving-*`, `Mjlab-Soccer-Teacher-*`, `Mjlab-Soccer-Distill-*`).
+
+### Sanity-check with Dummy Agents
 
 Use built-in agents to sanity check your MDP before training:
 

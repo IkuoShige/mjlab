@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import torch
 from rsl_rl.env import VecEnv
@@ -21,7 +20,7 @@ class MjlabOnPolicyRunner(OnPolicyRunner):
     device: str = "cpu",
   ) -> None:
     # Strip None-valued optional configs so MLPModel doesn't receive them.
-    for key in ("actor", "critic"):
+    for key in ("actor", "critic", "student", "teacher"):
       if key in train_cfg:
         for opt in ("cnn_cfg", "distribution_cfg"):
           if train_cfg[key].get(opt) is None:
@@ -56,13 +55,6 @@ class MjlabOnPolicyRunner(OnPolicyRunner):
       dynamic_axes={},
       dynamo=False,
     )
-
-  @staticmethod
-  def _get_export_paths(checkpoint_path: str) -> tuple[Path, str, Path]:
-    """Resolve ONNX export paths from a checkpoint path."""
-    export_dir = Path(checkpoint_path).parent
-    filename = f"{export_dir.name}.onnx"
-    return export_dir, filename, export_dir / filename
 
   def save(self, path: str, infos=None) -> None:
     """Save checkpoint.

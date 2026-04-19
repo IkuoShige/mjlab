@@ -125,6 +125,51 @@ class RslRlBaseRunnerCfg:
 
 
 @dataclass
+class RslRlDistillationAlgorithmCfg:
+  """Config for the Distillation algorithm."""
+
+  num_learning_epochs: int = 5
+  learning_rate: float = 1e-3
+  gradient_length: int = 24
+  max_grad_norm: float | None = 1.0
+  loss_type: str = "mse"
+  optimizer: str = "adam"
+  class_name: str = "Distillation"
+
+
+@dataclass
+class RslRlDistillationRunnerCfg(RslRlBaseRunnerCfg):
+  class_name: str = "DistillationRunner"
+  student: RslRlModelCfg = field(
+    default_factory=lambda: RslRlModelCfg(
+      distribution_cfg={
+        "class_name": "GaussianDistribution",
+        "init_std": 1.0,
+        "std_type": "scalar",
+      }
+    )
+  )
+  teacher: RslRlModelCfg = field(
+    default_factory=lambda: RslRlModelCfg(
+      distribution_cfg={
+        "class_name": "GaussianDistribution",
+        "init_std": 1.0,
+        "std_type": "scalar",
+      }
+    )
+  )
+  algorithm: RslRlDistillationAlgorithmCfg = field(
+    default_factory=RslRlDistillationAlgorithmCfg
+  )
+  obs_groups: dict[str, tuple[str, ...]] = field(
+    default_factory=lambda: {
+      "student": ("actor",),
+      "teacher": ("critic",),
+    },
+  )
+
+
+@dataclass
 class RslRlOnPolicyRunnerCfg(RslRlBaseRunnerCfg):
   class_name: str = "OnPolicyRunner"
   """The runner class name. Default is OnPolicyRunner."""
