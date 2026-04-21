@@ -23,10 +23,8 @@ from __future__ import annotations
 import argparse
 import glob
 import os
-from pathlib import Path
 
 import numpy as np
-
 
 # Isaac Lab BFS ordering -> MuJoCo DFS ordering for Unitree G1 (30 bodies).
 # MJ_TO_ISAAC_BODY[mj_idx] = isaac_idx
