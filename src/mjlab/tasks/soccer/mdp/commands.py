@@ -61,7 +61,7 @@ class MultiMotionLoader:
     for motion_file in motion_files:
       assert os.path.isfile(motion_file), f"Invalid file path: {motion_file}"
       data = np.load(motion_file)
-      fps_list.append(float(data["fps"]))
+      fps_list.append(float(np.asarray(data["fps"]).item()))
       self.motion_name.append(motion_file.split("/")[-1].split(".")[0])
       self.motion_lengths.append(data["joint_pos"].shape[0])
 
@@ -187,9 +187,8 @@ class SoccerMotionCommand(CommandTerm):
     )
 
     # Cache foot body indices for velocity-gated kick detection.
-    foot_names = ("left_ankle_roll_link", "right_ankle_roll_link")
     self._foot_body_indices = torch.tensor(
-      self.robot.find_bodies(foot_names, preserve_order=True)[0],
+      self.robot.find_bodies(cfg.foot_body_names, preserve_order=True)[0],
       dtype=torch.long,
       device=self.device,
     )
@@ -432,13 +431,14 @@ class SoccerMotionCommand(CommandTerm):
 
   @property
   def robot_pelvis_pos_w(self) -> torch.Tensor:
-    idx = self.robot.body_names.index("pelvis")
-    return self.robot.data.body_link_pos_w[:, idx]
+    """Root/anchor body world position. Name kept for backwards compat with
+    existing reward/observation functions ported from the G1 HumanoidSoccer
+    codebase; for K1 this returns the Trunk pose."""
+    return self.robot.data.body_link_pos_w[:, self.robot_anchor_body_index]
 
   @property
   def robot_pelvis_quat_w(self) -> torch.Tensor:
-    idx = self.robot.body_names.index("pelvis")
-    return self.robot.data.body_link_quat_w[:, idx]
+    return self.robot.data.body_link_quat_w[:, self.robot_anchor_body_index]
 
   @property
   def kick_leg(self) -> torch.Tensor:
@@ -809,6 +809,11 @@ class SoccerMotionCommandCfg(CommandTermCfg):
 
   blind_distance_min_range: tuple[float, float] = (0.3, 0.5)
   blind_distance_max_range: tuple[float, float] = (1.5, 2.0)
+
+  foot_body_names: tuple[str, str] = (
+    "left_ankle_roll_link",
+    "right_ankle_roll_link",
+  )
 
   def build(self, env: ManagerBasedRlEnv) -> SoccerMotionCommand:
     return SoccerMotionCommand(self, env)
