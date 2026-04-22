@@ -296,9 +296,14 @@ def k1_flat_soccer_kick_env_cfg(
       weight=1.0,
       params={"command_name": "motion", "std": 3.14},
     ),
+    # motion_foot_pos weight is reduced from the G1 default of 1.0 because on
+    # K1 the retargeted kick foot lands ~0.2 m short of the ball at the kick
+    # frame (measured); a strong foot-tracking reward then prevents the policy
+    # from deviating to reach the ball. 0.3 still anchors the swing foot to
+    # the motion but leaves room for the RL policy to close the remaining gap.
     "motion_foot_pos": RewardTermCfg(
       func=soccer_mdp.motion_relative_foot_position_error_exp,
-      weight=1.0,
+      weight=0.3,
       params={
         "command_name": "motion",
         "std": 0.3,
