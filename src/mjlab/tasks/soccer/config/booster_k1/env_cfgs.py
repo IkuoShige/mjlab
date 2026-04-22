@@ -23,6 +23,20 @@ from mjlab.tasks.tracking.tracking_env_cfg import VELOCITY_RANGE, make_tracking_
 # Motion directory for K1 (retargeted via k1_retarget/scripts/soccer_npz_g1_to_k1.py).
 _DEFAULT_MOTION_DIR = "motions/soccer-standard-mj-k1"
 
+# K1 is a smaller, lighter robot than G1 so the soccer-kick reward thresholds
+# and ball-placement ranges must scale accordingly. Values below are derived
+# from measurements of the retargeted motions and mass ratios:
+#   body_scale (K1/G1 standing height) = 0.678
+#   mass ratio (K1/G1)                 = 0.590  (19.7 kg / 33.3 kg)
+#   impact-force ratio  = mass * velocity ratio ≈ 0.4
+# In the retargeted motions K1's peak kick-foot speed is ~3.4–4.0 m/s (G1 is
+# ~5.2–5.6 m/s), so a 3.0 m/s gate would mostly silence kick rewards on K1.
+_K1_MIN_FOOT_SPEED = 2.0
+_K1_HORIZONTAL_FORCE_THRESHOLD = 15
+_K1_BALL_VELOCITY_THRESHOLD = 0.35
+_K1_BALL_SPEED_STD = 0.8
+_K1_CURVE_RADIUS_OFFSET = 0.17
+
 
 def _discover_motion_files(motion_dir: str = _DEFAULT_MOTION_DIR) -> list[str]:
   files = sorted(glob.glob(f"{motion_dir}/*.npz"))
@@ -122,7 +136,7 @@ def k1_flat_soccer_kick_env_cfg(
       velocity_range=VELOCITY_RANGE,
       joint_position_range=(-0.1, 0.1),
       curve_offset_range={
-        "radius": (-0.25, 0.25),
+        "radius": (-_K1_CURVE_RADIUS_OFFSET, _K1_CURVE_RADIUS_OFFSET),
         "arc_angle": math.pi / 9,
         "height": SOCCER_BALL_RADIUS,
       },
@@ -325,8 +339,8 @@ def k1_flat_soccer_kick_env_cfg(
       params={
         "command_name": "motion",
         "ball_sensor_name": "ball_contact",
-        "horizontal_force_threshold": 30,
-        "min_foot_speed": 3.0,
+        "horizontal_force_threshold": _K1_HORIZONTAL_FORCE_THRESHOLD,
+        "min_foot_speed": _K1_MIN_FOOT_SPEED,
         "foot_cfg": _foot_cfg(),
       },
     ),
@@ -336,8 +350,8 @@ def k1_flat_soccer_kick_env_cfg(
       params={
         "command_name": "motion",
         "ball_sensor_name": "ball_contact",
-        "horizontal_force_threshold": 30,
-        "min_foot_speed": 3.0,
+        "horizontal_force_threshold": _K1_HORIZONTAL_FORCE_THRESHOLD,
+        "min_foot_speed": _K1_MIN_FOOT_SPEED,
         "foot_cfg": _foot_cfg(),
       },
     ),
@@ -347,10 +361,10 @@ def k1_flat_soccer_kick_env_cfg(
       params={
         "command_name": "motion",
         "std": 0.8,
-        "velocity_threshold": 0.5,
+        "velocity_threshold": _K1_BALL_VELOCITY_THRESHOLD,
         "ball_sensor_name": "ball_contact",
-        "horizontal_force_threshold": 30,
-        "min_foot_speed": 3.0,
+        "horizontal_force_threshold": _K1_HORIZONTAL_FORCE_THRESHOLD,
+        "min_foot_speed": _K1_MIN_FOOT_SPEED,
         "foot_cfg": _foot_cfg(),
       },
     ),
@@ -359,11 +373,11 @@ def k1_flat_soccer_kick_env_cfg(
       weight=10.0,
       params={
         "command_name": "motion",
-        "std": 1.2,
-        "velocity_threshold": 0.5,
+        "std": _K1_BALL_SPEED_STD,
+        "velocity_threshold": _K1_BALL_VELOCITY_THRESHOLD,
         "ball_sensor_name": "ball_contact",
-        "horizontal_force_threshold": 30,
-        "min_foot_speed": 3.0,
+        "horizontal_force_threshold": _K1_HORIZONTAL_FORCE_THRESHOLD,
+        "min_foot_speed": _K1_MIN_FOOT_SPEED,
         "foot_cfg": _foot_cfg(),
       },
     ),
@@ -373,7 +387,7 @@ def k1_flat_soccer_kick_env_cfg(
       params={
         "command_name": "motion",
         "std": 3,
-        "velocity_threshold": 0.5,
+        "velocity_threshold": _K1_BALL_VELOCITY_THRESHOLD,
       },
     ),
   }
