@@ -6,16 +6,14 @@ Ported from HumanoidSoccer (Kong et al., 2026).
 from __future__ import annotations
 
 import math
-import os
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-import numpy as np
 import torch
 
 from mjlab.managers import CommandTerm, CommandTermCfg
 from mjlab.tasks.soccer.mdp.kick_detection import KickContactTracker
+from mjlab.tasks.tracking.mdp.commands import MultiMotionLoader
 from mjlab.utils.lab_api.math import (
   quat_apply,
   quat_error_magnitude,
@@ -29,135 +27,6 @@ from mjlab.utils.lab_api.math import (
 if TYPE_CHECKING:
   from mjlab.entity import Entity
   from mjlab.envs import ManagerBasedRlEnv
-
-
-class MultiMotionLoader:
-  """Loads multiple .npz motion-capture files, padding to uniform length."""
-
-  def __init__(
-    self,
-    motion_files: list[str],
-    body_indexes: Sequence[int] | torch.Tensor,
-    device: str = "cpu",
-  ) -> None:
-    assert len(motion_files) > 0, "motion_files must not be empty"
-    self.num_files = len(motion_files)
-    self._body_indexes = body_indexes
-    self.device = device
-
-    self.motion_name: list[str] = []
-    self.motion_lengths: list[int] = []
-    kick_leg_labels: list[str | None] = []
-
-    joint_pos_list: list[torch.Tensor] = []
-    joint_vel_list: list[torch.Tensor] = []
-    body_pos_w_list: list[torch.Tensor] = []
-    body_quat_w_list: list[torch.Tensor] = []
-    body_lin_vel_w_list: list[torch.Tensor] = []
-    body_ang_vel_w_list: list[torch.Tensor] = []
-    fps_list: list[float] = []
-    max_T = 0
-
-    for motion_file in motion_files:
-      assert os.path.isfile(motion_file), f"Invalid file path: {motion_file}"
-      data = np.load(motion_file)
-      fps_list.append(float(np.asarray(data["fps"]).item()))
-      self.motion_name.append(motion_file.split("/")[-1].split(".")[0])
-      self.motion_lengths.append(data["joint_pos"].shape[0])
-
-      jp = torch.tensor(data["joint_pos"], dtype=torch.float32, device=device)
-      jv = torch.tensor(data["joint_vel"], dtype=torch.float32, device=device)
-      bp = torch.tensor(data["body_pos_w"], dtype=torch.float32, device=device)
-      bq = torch.tensor(data["body_quat_w"], dtype=torch.float32, device=device)
-      blv = torch.tensor(data["body_lin_vel_w"], dtype=torch.float32, device=device)
-      bav = torch.tensor(data["body_ang_vel_w"], dtype=torch.float32, device=device)
-      joint_pos_list.append(jp)
-      joint_vel_list.append(jv)
-      body_pos_w_list.append(bp)
-      body_quat_w_list.append(bq)
-      body_lin_vel_w_list.append(blv)
-      body_ang_vel_w_list.append(bav)
-
-      label_value: str | None = None
-      if "kick_leg" in data.files:
-        raw_label = data["kick_leg"]
-        try:
-          label_str = str(raw_label.item()).strip().lower()
-        except Exception:
-          label_str = str(raw_label).strip().lower()
-        if label_str in {"left", "right"}:
-          label_value = label_str
-      kick_leg_labels.append(label_value)
-      max_T = max(max_T, jp.shape[0])
-
-    def pad_and_stack(
-      tensor_list: list[torch.Tensor], pad_value: float = 0.0
-    ) -> torch.Tensor:
-      padded = []
-      for t in tensor_list:
-        T, *rest = t.shape
-        pad_size = [max_T - T] + rest
-        padded.append(
-          torch.cat(
-            [
-              t,
-              torch.full(pad_size, pad_value, device=self.device, dtype=t.dtype),
-            ],
-            dim=0,
-          )
-        )
-      return torch.stack(padded, dim=0)
-
-    self.joint_pos = pad_and_stack(joint_pos_list)
-    self.joint_vel = pad_and_stack(joint_vel_list)
-    self._body_pos_w = pad_and_stack(body_pos_w_list)
-    self._body_quat_w = pad_and_stack(body_quat_w_list)
-    self._body_lin_vel_w = pad_and_stack(body_lin_vel_w_list)
-    self._body_ang_vel_w = pad_and_stack(body_ang_vel_w_list)
-
-    self.time_step_total = max_T
-    self.file_lengths = torch.tensor(
-      [jp.shape[0] for jp in joint_pos_list],
-      dtype=torch.long,
-      device=self.device,
-    )
-    self.fps = fps_list[0]
-    self._kick_leg_labels = tuple(kick_leg_labels)
-
-  @property
-  def body_pos_w(self) -> torch.Tensor:
-    return self._body_pos_w[:, :, self._body_indexes]
-
-  @property
-  def body_quat_w(self) -> torch.Tensor:
-    return self._body_quat_w[:, :, self._body_indexes]
-
-  @property
-  def body_lin_vel_w(self) -> torch.Tensor:
-    return self._body_lin_vel_w[:, :, self._body_indexes]
-
-  @property
-  def body_ang_vel_w(self) -> torch.Tensor:
-    return self._body_ang_vel_w[:, :, self._body_indexes]
-
-  @property
-  def kick_leg_labels(self) -> tuple[str | None, ...]:
-    return self._kick_leg_labels
-
-  def get_last_frame_anchor_pos(
-    self, motion_idx: int, anchor_body_idx: int, motion_length: int
-  ) -> torch.Tensor:
-    return self._body_pos_w[motion_idx, motion_length - 1, anchor_body_idx]
-
-  def get_first_frame_anchor_pos(
-    self, motion_idx: int, anchor_body_idx: int
-  ) -> torch.Tensor:
-    return self._body_pos_w[motion_idx, 0, anchor_body_idx]
-
-  def get_first_frame_anchor_quat(
-    self, motion_idx: int, anchor_body_idx: int
-  ) -> torch.Tensor:
-    return self._body_quat_w[motion_idx, 0, anchor_body_idx]
 
 
 class SoccerMotionCommand(CommandTerm):

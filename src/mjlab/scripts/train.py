@@ -13,7 +13,7 @@ import tyro
 from mjlab.envs import ManagerBasedRlEnv, ManagerBasedRlEnvCfg
 from mjlab.rl import MjlabOnPolicyRunner, RslRlBaseRunnerCfg, RslRlVecEnvWrapper
 from mjlab.tasks.registry import list_tasks, load_env_cfg, load_rl_cfg, load_runner_cls
-from mjlab.tasks.tracking.mdp import MotionCommandCfg
+from mjlab.tasks.tracking.mdp import MotionCommandCfg, MultiMotionCommandCfg
 from mjlab.utils.gpu import select_gpus
 from mjlab.utils.os import dump_yaml, get_checkpoint_path, get_wandb_checkpoint_path
 from mjlab.utils.torch import configure_torch_backends
@@ -68,11 +68,12 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
   registry_name: str | None = None
 
   # Check if this is a tracking task by checking for motion command.
-  is_tracking_task = "motion" in cfg.env.commands and isinstance(
-    cfg.env.commands["motion"], MotionCommandCfg
-  )
+  motion_cfg = cfg.env.commands.get("motion")
+  is_single_motion_tracking = isinstance(motion_cfg, MotionCommandCfg)
+  is_multi_motion_tracking = isinstance(motion_cfg, MultiMotionCommandCfg)
+  is_tracking_task = is_single_motion_tracking or is_multi_motion_tracking
 
-  if is_tracking_task:
+  if is_single_motion_tracking:
     motion_cmd = cfg.env.commands["motion"]
     assert isinstance(motion_cmd, MotionCommandCfg)
 
@@ -95,6 +96,22 @@ def run_train(task_id: str, cfg: TrainConfig, log_dir: Path) -> None:
         "  --registry-name your-org/motions/motion-name (download from WandB)\n"
         "  --env.commands.motion.motion-file /path/to/motion.npz (local file)"
       )
+  elif is_multi_motion_tracking:
+    motion_cmd = cfg.env.commands["motion"]
+    assert isinstance(motion_cmd, MultiMotionCommandCfg)
+    if not motion_cmd.motion_files:
+      raise ValueError(
+        "Multi-motion tracking task has empty motion_files. Set "
+        "--env.commands.motion.motion-files [...] or populate the default in "
+        "the env config."
+      )
+    missing = [f for f in motion_cmd.motion_files if not Path(f).exists()]
+    if missing:
+      raise FileNotFoundError(
+        f"Multi-motion tracking: {len(missing)} motion file(s) missing: "
+        f"{missing[:3]}..."
+      )
+    print(f"[INFO] Multi-motion tracking with {len(motion_cmd.motion_files)} clips.")
 
   # Enable NaN guard if requested.
   if cfg.enable_nan_guard:
