@@ -1,3 +1,5 @@
+import os
+
 import torch
 from packaging.version import parse
 
@@ -23,8 +25,15 @@ def configure_torch_backends(allow_tf32: bool = True, deterministic: bool = Fals
   else:
     _configure_pre29(allow_tf32)
 
-  torch.backends.cudnn.benchmark = not deterministic  # Find fastest algorithms.
-  torch.backends.cudnn.deterministic = deterministic  # Ensure reproducibility.
+  # Opt-out: some environments have a broken cuDNN install where
+  # torch._cudnn_rnn_flatten_weight / conv1d raise CUDNN_STATUS_NOT_INITIALIZED
+  # even on a trivial tensor. Set MJLAB_DISABLE_CUDNN=1 to fall back to native
+  # kernels (slower for LSTM, fine for most else).
+  if os.environ.get("MJLAB_DISABLE_CUDNN") == "1":
+    torch.backends.cudnn.enabled = False
+  else:
+    torch.backends.cudnn.benchmark = not deterministic  # Find fastest algorithms.
+    torch.backends.cudnn.deterministic = deterministic  # Reproducibility.
 
 
 def _configure_29(allow_tf32: bool):
