@@ -204,14 +204,41 @@ def get_k1_robot_cfg() -> EntityCfg:
   )
 
 
-K1_ACTION_SCALE: dict[str, float] = {}
-for actuator_cfg in K1_ARTICULATION.actuators:
-  assert isinstance(actuator_cfg, BuiltinPositionActuatorCfg)
-  effort_limit = actuator_cfg.effort_limit
-  stiffness = actuator_cfg.stiffness
-  assert effort_limit is not None
-  for joint_name in actuator_cfg.target_names_expr:
-    K1_ACTION_SCALE[joint_name] = 0.25 * effort_limit / stiffness
+# Manually tuned action scales matching G1's working values
+# (G1 uses 0.35 rad for knee, 0.55 rad for hip pitch, 0.44 rad for ankles, etc.).
+# The generic ``0.25 * effort / stiffness`` formula gives pathologically small
+# scales on K1's legs (knee 1.5°, ankle 1.3°) because K1's stiffness-to-effort
+# ratio is ~13x G1's — the formula couples a physical PD property to an RL
+# hyperparameter, which breaks here. Motion-capture kick swings need ~20°+ of
+# knee extension, so any scale <10° makes the policy physically unable to
+# match the reference motion regardless of reward/architecture tuning.
+K1_ACTION_SCALE: dict[str, float] = {
+  # Legs: mirror G1 values for the analogous joints.
+  "Left_Hip_Pitch": 0.55,
+  "Right_Hip_Pitch": 0.55,
+  "Left_Hip_Roll": 0.35,
+  "Right_Hip_Roll": 0.35,
+  "Left_Hip_Yaw": 0.35,
+  "Right_Hip_Yaw": 0.35,
+  "Left_Knee_Pitch": 0.35,
+  "Right_Knee_Pitch": 0.35,
+  "Left_Ankle_Pitch": 0.44,
+  "Right_Ankle_Pitch": 0.44,
+  "Left_Ankle_Roll": 0.44,
+  "Right_Ankle_Roll": 0.44,
+  # Arms: mirror G1 shoulder/elbow scales; cap K1's extreme 50.8° shoulder.
+  "ALeft_Shoulder_Pitch": 0.44,
+  "ARight_Shoulder_Pitch": 0.44,
+  "Left_Shoulder_Roll": 0.44,
+  "Right_Shoulder_Roll": 0.44,
+  "Left_Elbow_Pitch": 0.44,
+  "Right_Elbow_Pitch": 0.44,
+  "Left_Elbow_Yaw": 0.44,
+  "Right_Elbow_Yaw": 0.44,
+  # Head: keep a modest range.
+  "AAHead_yaw": 0.19,
+  "Head_pitch": 0.19,
+}
 
 
 K1_LOCOMOTION_ACTION_SCALE = dict(K1_ACTION_SCALE)
