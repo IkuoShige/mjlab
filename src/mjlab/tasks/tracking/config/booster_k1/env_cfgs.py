@@ -146,7 +146,7 @@ def booster_k1_flat_multimotion_tracking_env_cfg(
     pose_range=single.pose_range,
     velocity_range=single.velocity_range,
     joint_position_range=single.joint_position_range,
-    sampling_mode=single.sampling_mode if play else "uniform",
+    sampling_mode=single.sampling_mode if play else "adaptive",
   )
   cfg.commands = {"motion": multi}
 

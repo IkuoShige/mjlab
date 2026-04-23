@@ -1127,6 +1127,64 @@ class MultiMotionCommand(CommandTerm):
       self.joint_vel - self.robot_joint_vel, dim=-1
     )
 
+  def _debug_vis_impl(self, visualizer: DebugVisualizer) -> None:
+    """Draw ghost robot (translucent reference pose) or body frames."""
+    env_indices = visualizer.get_env_indices(self.num_envs)
+    if not env_indices:
+      return
+
+    if self.cfg.viz.mode == "ghost":
+      if self._ghost_model is None:
+        self._ghost_model = copy.deepcopy(self._env.sim.mj_model)
+        for gi in range(self._ghost_model.ngeom):
+          if (
+            self._ghost_model.geom_contype[gi] != 0
+            or self._ghost_model.geom_conaffinity[gi] != 0
+          ):
+            self._ghost_model.geom_rgba[gi, 3] = 0
+          else:
+            self._ghost_model.geom_rgba[gi] = self._ghost_color
+
+      entity: Entity = self._env.scene[self.cfg.entity_name]
+      indexing = entity.indexing
+      free_joint_q_adr = indexing.free_joint_q_adr.cpu().numpy()
+      joint_q_adr = indexing.joint_q_adr.cpu().numpy()
+
+      for batch in env_indices:
+        qpos = np.zeros(self._env.sim.mj_model.nq)
+        qpos[free_joint_q_adr[0:3]] = self.body_pos_w[batch, 0].cpu().numpy()
+        qpos[free_joint_q_adr[3:7]] = self.body_quat_w[batch, 0].cpu().numpy()
+        qpos[joint_q_adr] = self.joint_pos[batch].cpu().numpy()
+
+        visualizer.add_ghost_mesh(
+          qpos,
+          model=self._ghost_model,
+          label=f"ghost_{batch}",
+        )
+
+    elif self.cfg.viz.mode == "frames":
+      for batch in env_indices:
+        desired_body_pos = self.body_pos_w[batch].cpu().numpy()
+        desired_body_rotm = matrix_from_quat(self.body_quat_w[batch]).cpu().numpy()
+        current_body_pos = self.robot_body_pos_w[batch].cpu().numpy()
+        current_body_rotm = (
+          matrix_from_quat(self.robot_body_quat_w[batch]).cpu().numpy()
+        )
+        for i, body_name in enumerate(self.cfg.body_names):
+          visualizer.add_frame(
+            position=desired_body_pos[i],
+            rotation_matrix=desired_body_rotm[i],
+            scale=0.08,
+            label=f"desired_{body_name}_{batch}",
+            axis_colors=_DESIRED_FRAME_COLORS,
+          )
+          visualizer.add_frame(
+            position=current_body_pos[i],
+            rotation_matrix=current_body_rotm[i],
+            scale=0.12,
+            label=f"current_{body_name}_{batch}",
+          )
+
 
 @dataclass(kw_only=True)
 class MultiMotionCommandCfg(CommandTermCfg):
@@ -1145,7 +1203,10 @@ class MultiMotionCommandCfg(CommandTermCfg):
   adaptive_lambda: float = 0.1
   adaptive_uniform_ratio: float = 0.1
   adaptive_alpha: float = 0.4
-  sampling_mode: Literal["adaptive", "uniform", "start"] = "uniform"
+  # Adaptive sampling focuses on failing segments, matching HumanoidSoccer's
+  # Tracking-Terrain-G1-RNN-v0 Stage 1 (sampling_strategy="adaptive"). Uniform
+  # under-samples the kick-swing moments where tracking is hardest.
+  sampling_mode: Literal["adaptive", "uniform", "start"] = "adaptive"
 
   @dataclass
   class VizCfg:
