@@ -35,6 +35,33 @@ if TYPE_CHECKING:
 _DESIRED_FRAME_COLORS = ((1.0, 0.5, 0.5), (0.5, 1.0, 0.5), (0.5, 0.5, 1.0))
 
 
+def _kernel_smooth(probs: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
+  """Apply a 1D non-causal kernel with right-replicate padding.
+
+  Avoids ``torch.nn.functional.conv1d`` because on some CUDA/cuDNN setups
+  that op fails with ``CUDNN_STATUS_NOT_INITIALIZED`` on a tiny tensor.
+  The kernel is small (default length 3) so a manual shift-and-add is
+  both robust and fast.
+
+  Args:
+    probs: (M, B) failure-count tensor.
+    kernel: (K,) smoothing weights (already normalized to sum=1).
+
+  Returns:
+    Smoothed tensor of shape (M, B).
+  """
+  k = kernel.numel()
+  if k <= 1:
+    return probs * (kernel[0] if k == 1 else 1.0)
+  pad = probs[:, -1:].expand(-1, k - 1)
+  padded = torch.cat([probs, pad], dim=-1)  # (M, B + K - 1)
+  out = torch.zeros_like(probs)
+  B = probs.shape[-1]
+  for i in range(k):
+    out = out + kernel[i] * padded[:, i : i + B]
+  return out
+
+
 class MotionLoader:
   def __init__(
     self, motion_file: str, body_indexes: torch.Tensor, device: str = "cpu"
@@ -398,14 +425,9 @@ class MotionCommand(CommandTerm):
     sampling_probabilities = (
       self.bin_failed_count + self.cfg.adaptive_uniform_ratio / float(self.bin_count)
     )
-    sampling_probabilities = torch.nn.functional.pad(
-      sampling_probabilities.unsqueeze(0).unsqueeze(0),
-      (0, self.cfg.adaptive_kernel_size - 1),  # Non-causal kernel
-      mode="replicate",
-    )
-    sampling_probabilities = torch.nn.functional.conv1d(
-      sampling_probabilities, self.kernel.view(1, 1, -1)
-    ).view(-1)
+    sampling_probabilities = _kernel_smooth(
+      sampling_probabilities.unsqueeze(0), self.kernel
+    ).squeeze(0)
 
     sampling_probabilities = sampling_probabilities / sampling_probabilities.sum()
 
@@ -988,12 +1010,7 @@ class MultiMotionCommand(CommandTerm):
     B = max(1, int(self.bin_count))
     uniform_per_pair = self.cfg.adaptive_uniform_ratio / float(M * B)
     probs = self.bin_failed_count + self._current_bin_failed + uniform_per_pair
-    probs = torch.nn.functional.pad(
-      probs.unsqueeze(1),
-      (0, self.cfg.adaptive_kernel_size - 1),
-      mode="replicate",
-    )
-    probs = torch.nn.functional.conv1d(probs, self.kernel.view(1, 1, -1)).squeeze(1)
+    probs = _kernel_smooth(probs, self.kernel)
 
     probs = probs.view(-1)
     probs = probs / (probs.sum() + 1e-12)
