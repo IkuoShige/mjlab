@@ -467,6 +467,37 @@ def k1_flat_soccer_kick_env_cfg(
   return cfg
 
 
+def k1_flat_soccer_tracking_env_cfg(
+  play: bool = False,
+) -> ManagerBasedRlEnvCfg:
+  """Stage 1 pre-training: K1 soccer motion tracking with ball in scene.
+
+  Matches HumanoidSoccer's G1FlatMotionEnvCfg: ball is present and observed
+  (so obs dims match Stage 2 Kick env for checkpoint resume), but all kick /
+  ball-interaction rewards are zero — pure motion tracking for pretraining.
+  """
+  cfg = k1_flat_soccer_kick_env_cfg(play=play)
+
+  # Zero all kick / ball-interaction rewards so the policy only learns motion
+  # tracking. Keep the ball-contact sensor + ball entity + obs untouched so
+  # Stage 2 can resume weights without dim mismatch.
+  for name in (
+    "target_point_contact",
+    "sideways_kick",
+    "ball_velocity_direction_alignment",
+    "ball_speed_reward",
+    "ball_z_speed_penalty",
+    "target_point_proximity",
+    "pelvis_orientation",
+    "foot_distance",
+    "motion_foot_pos",
+  ):
+    if name in cfg.rewards:
+      cfg.rewards[name].weight = 0.0
+
+  return cfg
+
+
 def k1_flat_soccer_moving_env_cfg(
   play: bool = False,
 ) -> ManagerBasedRlEnvCfg:
