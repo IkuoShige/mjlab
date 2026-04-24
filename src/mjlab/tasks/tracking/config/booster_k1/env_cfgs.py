@@ -150,19 +150,4 @@ def booster_k1_flat_multimotion_tracking_env_cfg(
   )
   cfg.commands = {"motion": multi}
 
-  # Tighten the velocity-tracking reward. The base (std=1.0, weight=1.0) is
-  # slack enough that the policy settles on "match pose, skip velocity", which
-  # under-executes the kick swing (visible as tiny steps + weak nudge in play).
-  # std=0.5 / weight=2.0 matches pose-tracking's relative tightness (std=0.3,
-  # weight=1.0) so the velocity profile must follow the reference too.
-  lin_vel_reward = cfg.rewards["motion_body_lin_vel"]
-  lin_vel_reward.weight = 2.0
-  lin_vel_reward.params["std"] = 0.5
-
-  # Relax the action-rate penalty so fast swings aren't over-penalised. The
-  # base weight (-0.1) pushes cumulative penalty >-0.8 per episode, which on
-  # K1 was enough to bias the policy toward small/slow movements. -0.03 still
-  # suppresses jitter but leaves headroom for the kick-swing acceleration.
-  cfg.rewards["action_rate_l2"].weight = -0.03
-
   return cfg
