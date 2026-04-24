@@ -5,10 +5,12 @@ Ported from HumanoidSoccer (Kong et al., 2026).
 
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
+import numpy as np
 import torch
 
 from mjlab.managers import CommandTerm, CommandTermCfg
@@ -23,6 +25,7 @@ from mjlab.utils.lab_api.math import (
   sample_uniform,
   yaw_quat,
 )
+from mjlab.viewer.debug_visualizer import DebugVisualizer
 
 if TYPE_CHECKING:
   from mjlab.entity import Entity
@@ -191,6 +194,10 @@ class SoccerMotionCommand(CommandTerm):
     self._compute_soccer_ball_positions(all_ids)
     self._update_soccer_ball(all_ids)
     self._update_target_points(all_ids)
+
+    # Ghost viz state (lazily built on first draw).
+    self._ghost_model = None
+    self._ghost_color = np.array(cfg.viz.ghost_color, dtype=np.float32)
 
   # ------------------------------------------------------------------
   # Properties: motion reference data
@@ -651,6 +658,42 @@ class SoccerMotionCommand(CommandTerm):
       self.joint_vel - self.robot_joint_vel, dim=-1
     )
 
+  def _debug_vis_impl(self, visualizer: DebugVisualizer) -> None:
+    """Draw a translucent ghost robot at the current reference motion pose."""
+    env_indices = visualizer.get_env_indices(self.num_envs)
+    if not env_indices:
+      return
+
+    if self.cfg.viz.mode != "ghost":
+      return
+
+    if self._ghost_model is None:
+      self._ghost_model = copy.deepcopy(self._env.sim.mj_model)
+      for gi in range(self._ghost_model.ngeom):
+        if (
+          self._ghost_model.geom_contype[gi] != 0
+          or self._ghost_model.geom_conaffinity[gi] != 0
+        ):
+          self._ghost_model.geom_rgba[gi, 3] = 0
+        else:
+          self._ghost_model.geom_rgba[gi] = self._ghost_color
+
+    entity: Entity = self._env.scene[self.cfg.entity_name]
+    indexing = entity.indexing
+    free_joint_q_adr = indexing.free_joint_q_adr.cpu().numpy()
+    joint_q_adr = indexing.joint_q_adr.cpu().numpy()
+
+    for batch in env_indices:
+      qpos = np.zeros(self._env.sim.mj_model.nq)
+      qpos[free_joint_q_adr[0:3]] = self.body_pos_w[batch, 0].cpu().numpy()
+      qpos[free_joint_q_adr[3:7]] = self.body_quat_w[batch, 0].cpu().numpy()
+      qpos[joint_q_adr] = self.joint_pos[batch].cpu().numpy()
+      visualizer.add_ghost_mesh(
+        qpos,
+        model=self._ghost_model,
+        label=f"ghost_{batch}",
+      )
+
 
 @dataclass(kw_only=True)
 class SoccerMotionCommandCfg(CommandTermCfg):
@@ -683,6 +726,13 @@ class SoccerMotionCommandCfg(CommandTermCfg):
     "left_ankle_roll_link",
     "right_ankle_roll_link",
   )
+
+  @dataclass
+  class VizCfg:
+    mode: Literal["ghost", "frames"] = "ghost"
+    ghost_color: tuple[float, float, float, float] = (0.5, 0.7, 0.5, 0.5)
+
+  viz: VizCfg = field(default_factory=VizCfg)
 
   def build(self, env: ManagerBasedRlEnv) -> SoccerMotionCommand:
     return SoccerMotionCommand(self, env)
