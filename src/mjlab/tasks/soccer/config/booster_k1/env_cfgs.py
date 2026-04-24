@@ -30,10 +30,17 @@ _DEFAULT_MOTION_DIR = "motions/soccer-standard-mj-k1"
 #   mass ratio (K1/G1)                 = 0.590  (19.7 kg / 33.3 kg)
 #   impact-force ratio  = mass * velocity ratio ≈ 0.4
 # In the retargeted motions K1's peak kick-foot speed is ~3.4–4.0 m/s (G1 is
-# ~5.2–5.6 m/s), so a 3.0 m/s gate would mostly silence kick rewards on K1.
-_K1_MIN_FOOT_SPEED = 2.0
+# ~5.2–5.6 m/s).
+#
+# MIN_FOOT_SPEED / BALL_VELOCITY_THRESHOLD are raised (2.0 → 3.5, 0.35 → 0.8)
+# to rule out the "small-step nudge" local optimum: with the old gates a soft
+# poke at ~2 m/s foot / ~0.4 m/s ball satisfied every kick reward, so the
+# policy never learned to wind up and swing through the ball. These higher
+# gates demand a real commitment to the swing — if the foot doesn't move at
+# kick speed, or the ball doesn't actually fly, no ball-related reward fires.
+_K1_MIN_FOOT_SPEED = 3.5
 _K1_HORIZONTAL_FORCE_THRESHOLD = 15
-_K1_BALL_VELOCITY_THRESHOLD = 0.35
+_K1_BALL_VELOCITY_THRESHOLD = 0.8
 _K1_BALL_SPEED_STD = 0.8
 _K1_CURVE_RADIUS_OFFSET = 0.17
 
@@ -311,8 +318,10 @@ def k1_flat_soccer_kick_env_cfg(
       },
     ),
     # Action penalties. K1 has no waist joints, so waist_action_rate_l2 is
-    # omitted (G1-specific).
-    "action_rate_l2": RewardTermCfg(func=tracking_mdp.action_rate_l2, weight=-1e-1),
+    # omitted (G1-specific). Weight reduced from -0.1 to -0.03 so the
+    # per-episode cumulative penalty doesn't suppress the kick-swing
+    # acceleration moment; -0.03 still flattens jitter on quiet phases.
+    "action_rate_l2": RewardTermCfg(func=tracking_mdp.action_rate_l2, weight=-3e-2),
     "joint_limit": RewardTermCfg(
       func=tracking_mdp.joint_pos_limits,
       weight=-10.0,
@@ -373,9 +382,14 @@ def k1_flat_soccer_kick_env_cfg(
         "foot_cfg": _foot_cfg(),
       },
     ),
+    # Weight raised 10 → 30 so the policy has a strong incentive to
+    # produce actual ball flight (ball_speed_reward is the main
+    # phase-gated signal at the impact frame, where the kick actually
+    # happens — unlike the broader motion-tracking rewards that are
+    # averaged over the whole episode).
     "ball_speed_reward": RewardTermCfg(
       func=soccer_mdp.ball_speed_reward,
-      weight=10.0,
+      weight=30.0,
       params={
         "command_name": "motion",
         "std": _K1_BALL_SPEED_STD,
