@@ -302,15 +302,30 @@ def k1_flat_soccer_kick_env_cfg(
     # collapses the reward to ~0; weight=2.0 makes the gap between proper
     # walking (high reward) and vibrating (~0) the dominant signal during
     # the approach phase, forcing the policy to follow the reference walk.
+    #
+    # Feet are excluded (body_names=TRACKING_BODY_NAMES) — the same body
+    # subset already used by motion_body_pos / motion_body_ori — so the
+    # foot velocity profile isn't locked to the reference. This lets the
+    # swing foot deviate from the recorded trajectory to actually reach
+    # an offset ball, while motion_foot_pos (weight 0.3) still pulls the
+    # foot gently back toward the reference for shape.
     "motion_body_lin_vel": RewardTermCfg(
       func=tracking_mdp.motion_global_body_linear_velocity_error_exp,
       weight=2.0,
-      params={"command_name": "motion", "std": 0.5},
+      params={
+        "command_name": "motion",
+        "std": 0.5,
+        "body_names": TRACKING_BODY_NAMES,
+      },
     ),
     "motion_body_ang_vel": RewardTermCfg(
       func=tracking_mdp.motion_global_body_angular_velocity_error_exp,
       weight=1.0,
-      params={"command_name": "motion", "std": 3.14},
+      params={
+        "command_name": "motion",
+        "std": 3.14,
+        "body_names": TRACKING_BODY_NAMES,
+      },
     ),
     # motion_foot_pos weight is reduced from the G1 default of 1.0 because on
     # K1 the retargeted kick foot lands ~0.2 m short of the ball at the kick
@@ -378,12 +393,17 @@ def k1_flat_soccer_kick_env_cfg(
         "foot_cfg": _foot_cfg(),
       },
     ),
+    # Tightened to better penalize directional misses (the ball flies but
+    # not toward target_destination). Old (weight=30, std=0.8) was lenient
+    # enough that ~30° misalignments still scored ~0.5 reward; raising
+    # weight to 50 and tightening std to 0.5 makes alignment with the
+    # post-kick destination the dominant ball-side gradient.
     "ball_velocity_direction_alignment": RewardTermCfg(
       func=soccer_mdp.ball_velocity_direction_alignment,
-      weight=30.0,
+      weight=50.0,
       params={
         "command_name": "motion",
-        "std": 0.8,
+        "std": 0.5,
         "velocity_threshold": _K1_BALL_VELOCITY_THRESHOLD,
         "ball_sensor_name": "ball_contact",
         "horizontal_force_threshold": _K1_HORIZONTAL_FORCE_THRESHOLD,
