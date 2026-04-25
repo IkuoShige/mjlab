@@ -659,39 +659,60 @@ class SoccerMotionCommand(CommandTerm):
     )
 
   def _debug_vis_impl(self, visualizer: DebugVisualizer) -> None:
-    """Draw a translucent ghost robot at the current reference motion pose."""
+    """Draw the reference ghost robot, the ball-position target (green) and
+    the post-kick destination target (red).
+    """
     env_indices = visualizer.get_env_indices(self.num_envs)
     if not env_indices:
       return
 
-    if self.cfg.viz.mode != "ghost":
-      return
+    # Ghost robot at the current reference motion pose.
+    if self.cfg.viz.mode == "ghost":
+      if self._ghost_model is None:
+        self._ghost_model = copy.deepcopy(self._env.sim.mj_model)
+        for gi in range(self._ghost_model.ngeom):
+          if (
+            self._ghost_model.geom_contype[gi] != 0
+            or self._ghost_model.geom_conaffinity[gi] != 0
+          ):
+            self._ghost_model.geom_rgba[gi, 3] = 0
+          else:
+            self._ghost_model.geom_rgba[gi] = self._ghost_color
 
-    if self._ghost_model is None:
-      self._ghost_model = copy.deepcopy(self._env.sim.mj_model)
-      for gi in range(self._ghost_model.ngeom):
-        if (
-          self._ghost_model.geom_contype[gi] != 0
-          or self._ghost_model.geom_conaffinity[gi] != 0
-        ):
-          self._ghost_model.geom_rgba[gi, 3] = 0
-        else:
-          self._ghost_model.geom_rgba[gi] = self._ghost_color
+      entity: Entity = self._env.scene[self.cfg.entity_name]
+      indexing = entity.indexing
+      free_joint_q_adr = indexing.free_joint_q_adr.cpu().numpy()
+      joint_q_adr = indexing.joint_q_adr.cpu().numpy()
 
-    entity: Entity = self._env.scene[self.cfg.entity_name]
-    indexing = entity.indexing
-    free_joint_q_adr = indexing.free_joint_q_adr.cpu().numpy()
-    joint_q_adr = indexing.joint_q_adr.cpu().numpy()
+      for batch in env_indices:
+        qpos = np.zeros(self._env.sim.mj_model.nq)
+        qpos[free_joint_q_adr[0:3]] = self.body_pos_w[batch, 0].cpu().numpy()
+        qpos[free_joint_q_adr[3:7]] = self.body_quat_w[batch, 0].cpu().numpy()
+        qpos[joint_q_adr] = self.joint_pos[batch].cpu().numpy()
+        visualizer.add_ghost_mesh(
+          qpos,
+          model=self._ghost_model,
+          label=f"ghost_{batch}",
+        )
 
+    # Kick targets (always shown when debug_vis is on, independent of mode).
+    # target_point_pos: where the foot should hit the ball (green).
+    # target_destination_pos: where the ball should go after the kick (red).
+    env_origins = self._env.scene.env_origins.cpu().numpy()
+    target_point = self.target_point_pos.cpu().numpy()
+    target_destination = self.target_destination_pos.cpu().numpy()
     for batch in env_indices:
-      qpos = np.zeros(self._env.sim.mj_model.nq)
-      qpos[free_joint_q_adr[0:3]] = self.body_pos_w[batch, 0].cpu().numpy()
-      qpos[free_joint_q_adr[3:7]] = self.body_quat_w[batch, 0].cpu().numpy()
-      qpos[joint_q_adr] = self.joint_pos[batch].cpu().numpy()
-      visualizer.add_ghost_mesh(
-        qpos,
-        model=self._ghost_model,
-        label=f"ghost_{batch}",
+      visualizer.add_sphere(
+        center=target_point[batch] + env_origins[batch],
+        radius=0.06,
+        color=(0.0, 1.0, 0.0, 0.7),
+        label=f"target_point_{batch}",
+      )
+      visualizer.add_sphere(
+        center=target_destination[batch] + env_origins[batch],
+        radius=0.10,
+        color=(1.0, 0.0, 0.0, 0.7),
+        label=f"target_destination_{batch}",
       )
 
 

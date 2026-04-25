@@ -293,10 +293,19 @@ def k1_flat_soccer_kick_env_cfg(
         "body_names": TRACKING_BODY_NAMES,
       },
     ),
+    # Tightened from (weight=1.0, std=1.0) to (weight=2.0, std=0.5) to kill
+    # the "vibrate forward" approach strategy: with the loose default, the
+    # policy could get to the ball by oscillating its body fast while
+    # satisfying motion_body_pos approximately, and the velocity reward
+    # exp(-err²/std²) was so flat that the cumulative cost was tiny. With
+    # std=0.5 the per-frame velocity error of a vibrating gait (~5 m/s)
+    # collapses the reward to ~0; weight=2.0 makes the gap between proper
+    # walking (high reward) and vibrating (~0) the dominant signal during
+    # the approach phase, forcing the policy to follow the reference walk.
     "motion_body_lin_vel": RewardTermCfg(
       func=tracking_mdp.motion_global_body_linear_velocity_error_exp,
-      weight=1.0,
-      params={"command_name": "motion", "std": 1.0},
+      weight=2.0,
+      params={"command_name": "motion", "std": 0.5},
     ),
     "motion_body_ang_vel": RewardTermCfg(
       func=tracking_mdp.motion_global_body_angular_velocity_error_exp,
@@ -508,6 +517,14 @@ def k1_flat_soccer_tracking_env_cfg(
   ):
     if name in cfg.rewards:
       cfg.rewards[name].weight = 0.0
+
+  # Restore the loose motion_body_lin_vel reward used to train Stage 1.
+  # Stage 2's tightened version (weight=2.0, std=0.5) was added to break
+  # the "vibrate forward" approach strategy that emerges from the ball
+  # reward landscape — Stage 1 has no ball rewards so the loose default
+  # already produces clean walking and the tighter version isn't needed.
+  cfg.rewards["motion_body_lin_vel"].weight = 1.0
+  cfg.rewards["motion_body_lin_vel"].params["std"] = 1.0
 
   return cfg
 
