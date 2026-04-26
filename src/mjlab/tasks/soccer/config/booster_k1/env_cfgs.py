@@ -327,14 +327,21 @@ def k1_flat_soccer_kick_env_cfg(
         "body_names": TRACKING_BODY_NAMES,
       },
     ),
-    # motion_foot_pos weight is reduced from the G1 default of 1.0 because on
-    # K1 the retargeted kick foot lands ~0.2 m short of the ball at the kick
-    # frame (measured); a strong foot-tracking reward then prevents the policy
-    # from deviating to reach the ball. 0.3 still anchors the swing foot to
-    # the motion but leaves room for the RL policy to close the remaining gap.
+    # motion_foot_pos: weight raised back to G1's default of 1.0. The earlier
+    # 0.3 was set so the policy could deviate +0.2 m at the kick frame to
+    # reach the offset ball, but the boosted ball rewards (~180 total at
+    # impact) now overwhelm motion_foot_pos's per-step cost (~0.4) by orders
+    # of magnitude — the kick deviation is still incentivised.
+    #
+    # The 1.0 weight is needed during the *walking* phase, where there are
+    # no ball rewards and the trunk velocity-tracking can be satisfied by a
+    # high-cadence shuffle as well as a real stride (trunk_v = step_amplitude
+    # × cadence, so 0.2 m × 5 Hz == 1.0 m × 1 Hz). Without strong foot-
+    # position tracking, the policy collapses to the shuffle. weight=1.0
+    # makes it preferable to actually reproduce the reference stride.
     "motion_foot_pos": RewardTermCfg(
       func=soccer_mdp.motion_relative_foot_position_error_exp,
-      weight=0.3,
+      weight=1.0,
       params={
         "command_name": "motion",
         "std": 0.3,
