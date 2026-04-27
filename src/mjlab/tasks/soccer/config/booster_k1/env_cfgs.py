@@ -327,24 +327,33 @@ def k1_flat_soccer_kick_env_cfg(
         "body_names": TRACKING_BODY_NAMES,
       },
     ),
-    # motion_foot_pos: weight raised back to G1's default of 1.0. The earlier
-    # 0.3 was set so the policy could deviate +0.2 m at the kick frame to
-    # reach the offset ball, but the boosted ball rewards (~180 total at
-    # impact) now overwhelm motion_foot_pos's per-step cost (~0.4) by orders
-    # of magnitude — the kick deviation is still incentivised.
+    # motion_foot_pos: weight 1.0, std tightened from 0.3 to 0.10.
     #
-    # The 1.0 weight is needed during the *walking* phase, where there are
-    # no ball rewards and the trunk velocity-tracking can be satisfied by a
-    # high-cadence shuffle as well as a real stride (trunk_v = step_amplitude
-    # × cadence, so 0.2 m × 5 Hz == 1.0 m × 1 Hz). Without strong foot-
-    # position tracking, the policy collapses to the shuffle. weight=1.0
-    # makes it preferable to actually reproduce the reference stride.
+    # weight=1.0 (HumanoidSoccer's G1 default) ensures the walking phase has
+    # a strong stride-amplitude signal — without it the trunk-velocity
+    # reward is satisfied identically by a real stride and a high-cadence
+    # shuffle (trunk_v == step_amplitude × cadence).
+    #
+    # std=0.10 is the key knob. At std=0.3 the loose Gaussian tail meant a
+    # 5 cm foot-position error scored 0.97 (only 3% off perfect) and a 10 cm
+    # error 0.89 — too forgiving to penalise the visible "march in place
+    # with tiny X swings" failure mode (eval showed the policy's left foot
+    # X-stride is 35 % of reference while Z lift overshoots by 10 %, i.e.
+    # the foot moves up but not forward, and would produce no real-world
+    # propulsion under high friction). Dropping std to 0.10 makes the same
+    # 5/10 cm errors score 0.78/0.37, a multi-x penalty increase that
+    # forces the policy to reproduce the reference foot trajectory in X
+    # (and not just the Z lift it had already learned).
+    #
+    # The 20 cm kick-frame foot deviation needed to reach an offset ball
+    # now costs ~0.62 reward per step over ~30 swing frames (~19 lost),
+    # which the boosted ball rewards (~180 at impact) still dominate.
     "motion_foot_pos": RewardTermCfg(
       func=soccer_mdp.motion_relative_foot_position_error_exp,
       weight=1.0,
       params={
         "command_name": "motion",
-        "std": 0.3,
+        "std": 0.10,
         "foot_body_names": ["left_foot_link", "right_foot_link"],
       },
     ),
