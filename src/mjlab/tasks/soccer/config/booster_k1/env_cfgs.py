@@ -358,10 +358,18 @@ def k1_flat_soccer_kick_env_cfg(
       },
     ),
     # Action penalties. K1 has no waist joints, so waist_action_rate_l2 is
-    # omitted (G1-specific). Weight reduced from -0.1 to -0.03 so the
-    # per-episode cumulative penalty doesn't suppress the kick-swing
-    # acceleration moment; -0.03 still flattens jitter on quiet phases.
-    "action_rate_l2": RewardTermCfg(func=tracking_mdp.action_rate_l2, weight=-3e-2),
+    # omitted (G1-specific). Tuned in two passes:
+    #   -0.1 (default) → too strong, suppressed the kick swing.
+    #   -0.03           → enabled the swing but allowed a high-frequency
+    #                     foot vibration during the walk-to-ball phase
+    #                     (visible in play as a ~5 Hz shimmy).
+    # -0.07 sits between: still light enough to leave headroom for the
+    # 10-30 frame swing acceleration (cumulative kick cost ~1 reward), but
+    # heavy enough that a sustained ~100-frame walking-phase oscillation
+    # accumulates ~6 reward of penalty — which combined with the tightened
+    # motion_foot_pos (std=0.10) makes the smooth reference walk the
+    # dominant strategy.
+    "action_rate_l2": RewardTermCfg(func=tracking_mdp.action_rate_l2, weight=-7e-2),
     "joint_limit": RewardTermCfg(
       func=tracking_mdp.joint_pos_limits,
       weight=-10.0,
