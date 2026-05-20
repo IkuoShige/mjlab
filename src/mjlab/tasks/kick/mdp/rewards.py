@@ -36,6 +36,24 @@ _DEFAULT_FOOT_CFG = SceneEntityCfg("robot", body_names=_FOOT_BODIES)
 _DEFAULT_ROBOT_CFG = SceneEntityCfg("robot")
 
 
+def _argmin_random_tiebreak(dist: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+  """``argmin`` along the last dim, breaking ties uniformly at random.
+
+  Plain ``torch.argmin`` returns the lowest index on ties, which biases
+  the foot-selection rewards toward the left foot (index 0 in
+  ``_FOOT_BODIES``) whenever the geometry is left/right symmetric — e.g.
+  a forward target with the ball directly in front. That bias survives
+  the mirror-symmetry data augmentation and shows up at eval +0° as a
+  bimodal direction distribution.
+
+  Adding noise of magnitude ``eps`` (default 1e-4 m, much smaller than
+  the typical foot-to-ball distance of 0.01-0.5 m) only changes the
+  result when distances are within ``eps`` of each other.
+  """
+  noise = (torch.rand_like(dist) * 2.0 - 1.0) * eps
+  return (dist + noise).argmin(dim=-1)
+
+
 def _get_command(env: ManagerBasedRlEnv, name: str) -> KickTargetCommand:
   term = env.command_manager.get_term(name)
   if not isinstance(term, KickTargetCommand):
@@ -132,7 +150,7 @@ def support_foot_proximity_at_kick(
   foot_pos = asset.data.body_link_pos_w[:, [l_idx, r_idx]]
   ball_pos = cmd.ball_pos_w.unsqueeze(1)
   dist = (foot_pos - ball_pos).norm(dim=-1)
-  kick_foot = dist.argmin(dim=-1)
+  kick_foot = _argmin_random_tiebreak(dist)
   support_dist = dist.gather(1, (1 - kick_foot).unsqueeze(-1)).squeeze(-1)
   shaped = torch.exp(-((support_dist - ideal_distance) ** 2) / (std**2))
   return shaped * fire.float()
@@ -279,7 +297,7 @@ def sideways_kick_aligned(
   ball_pos = cmd.ball_pos_w
   foot_pos = asset.data.body_link_pos_w[:, foot_idx]
   dist = (foot_pos - ball_pos.unsqueeze(1)).norm(dim=-1)
-  closest = dist.argmin(dim=-1)
+  closest = _argmin_random_tiebreak(dist)
   vel = foot_vel.gather(1, closest.view(-1, 1, 1).expand(-1, 1, 3)).squeeze(1)
   vel_xy = vel[:, :2]
   alignment = (vel_xy * cmd.kick_target_dir_w).sum(dim=-1)
@@ -308,7 +326,7 @@ def forward_kick_penalty(
   foot_pos = asset.data.body_link_pos_w[:, foot_idx]
   ball_pos = cmd.ball_pos_w
   dist = (foot_pos - ball_pos.unsqueeze(1)).norm(dim=-1)
-  closest = dist.argmin(dim=-1)
+  closest = _argmin_random_tiebreak(dist)
   foot_vel = asset.data.body_link_lin_vel_w[:, foot_idx]
   vel = foot_vel.gather(1, closest.view(-1, 1, 1).expand(-1, 1, 3)).squeeze(1)
   vel_xy = vel[:, :2]

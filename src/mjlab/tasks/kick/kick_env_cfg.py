@@ -338,7 +338,7 @@ def make_kick_env_cfg() -> ManagerBasedRlEnvCfg:
     # band (V1.5/V1.8 lessons).
     "kick_angle_error_l2": RewardTermCfg(
       func=mdp.rewards.kick_angle_error_l2,
-      weight=-10.0,
+      weight=-3.0,
       params={
         "command_name": "kick_target",
         "window_steps": 10,
