@@ -77,6 +77,15 @@ class RslRlPpoAlgorithmCfg:
   """The optimizer to use."""
   share_cnn_encoders: bool = False
   """Share CNN encoders between actor and critic."""
+  symmetry_cfg: dict[str, Any] | None = None
+  """Optional symmetry config consumed by rsl-rl's PPO.
+
+  When set, requires keys: ``use_data_augmentation`` (bool),
+  ``use_mirror_loss`` (bool), ``mirror_loss_coeff`` (float), and
+  ``data_augmentation_func`` (callable with signature
+  ``(env, obs, actions) -> (obs_aug, actions_aug)``). Not supported on
+  recurrent (LSTM/GRU) policies — pair only with MLP actors.
+  """
   class_name: str = "PPO"
   """Algorithm class name resolved by RSL-RL."""
 
@@ -122,6 +131,12 @@ class RslRlBaseRunnerCfg:
   upload_model: bool = True
   """Whether to upload model files (.pt, .onnx) to W&B on save. Set to
   False to keep metric logging but avoid storage usage. Default is True."""
+  amp_cfg: dict[str, Any] | None = None
+  """Optional AMP (Adversarial Motion Priors) config — consumed by a custom
+  runner (e.g. ``KickAMPRunner``). Must contain keys matching
+  :class:`mjlab.rl.amp.AMPCfg` fields (``motion_files``, ``state_fields``,
+  ``style_reward_coef`` etc.). ``None`` disables AMP and falls back to
+  vanilla PPO."""
 
 
 @dataclass
