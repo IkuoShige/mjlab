@@ -113,12 +113,13 @@ def k1_kick_env_cfg(
     # BETWEEN the feet, under the robot body — unphysical and not what
     # "ball at foot" means.
     # V1.34 distance curriculum (0.50 → 0.60 → 1.00m attempts) paused
-    # in V1.35 — user direction shifted to "perfect close-ball kick in
-    # arbitrary direction first, distance curriculum later (possibly
-    # via multi-critic for search / approach / kick decomposition)".
-    # Reverted to V1.33's at-foot distribution while re-introducing
-    # wider target_dir sampling (see commands.py:218).
-    ball_spawn_distance_range=(0.20, 0.40),
+    # in V1.35.
+    # V1.50: lowered floor 0.20 → 0.15 m. Some training episodes now
+    # spawn the ball right at the toe tip / just inside the foot stance,
+    # so the policy doesn't OOD when a deploy-time ball drifts to that
+    # extreme-close position (V1.48 moving-ball DR + perception drift
+    # can push the effective contact distance lower than 0.20).
+    ball_spawn_distance_range=(0.15, 0.40),
     # V1.7: tight front cone (~±45°) so the ball is always inside the K1
     # camera horizontal FOV (~±52°) when the policy aligns head yaw. Without
     # this, balls behind/beside the robot were "kicked" with no real
@@ -133,14 +134,16 @@ def k1_kick_env_cfg(
     min_foot_speed=3.0,
     horizontal_force_threshold=15.0,
     perception=perception_cfg,
-    # V1.48 sim2real DR: 30% of episodes start the ball with a slow random
-    # xy velocity. Forces the policy to keep tracking the ball with its
-    # head/perception right up to kick contact rather than committing to
-    # a memorized swing trajectory at episode start. Speed range
-    # (0.0, 0.5) m/s — slow enough that the kick is still feasible
-    # within the 5s episode, fast enough that the trajectory shifts
-    # meaningfully during approach.
-    ball_moving_prob=0.3,
+    # V1.48 added moving-ball DR (prob=0.3, speed up to 0.5 m/s) on top
+    # of every other V1.49 change at once, which was too much shock for
+    # the policy to absorb in a reasonable warm-start budget.
+    # V1.50 curriculum step 1: disable moving ball — train on STATIC
+    # ball first with all the other sim2real DR (blind, push, perception
+    # noise, action delay, condim=6 physics) so the policy can re-acquire
+    # basic kick-on-stable-ball mechanics under the new dynamics.
+    # V1.51 will re-introduce moving ball with prob=0.15 and a smaller
+    # speed range; V1.52 will return to V1.48 settings.
+    ball_moving_prob=0.0,
     ball_init_speed_range=(0.0, 0.5),
     resampling_time_range=(1.0e9, 1.0e9),
     debug_vis=True,
