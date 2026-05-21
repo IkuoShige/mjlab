@@ -36,7 +36,7 @@ _DEFAULT_FOOT_CFG = SceneEntityCfg("robot", body_names=_FOOT_BODIES)
 _DEFAULT_ROBOT_CFG = SceneEntityCfg("robot")
 
 
-def _argmin_random_tiebreak(dist: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
+def _argmin_random_tiebreak(dist: torch.Tensor, eps: float = 1e-3) -> torch.Tensor:
   """``argmin`` along the last dim, breaking ties uniformly at random.
 
   Plain ``torch.argmin`` returns the lowest index on ties, which biases
@@ -46,9 +46,13 @@ def _argmin_random_tiebreak(dist: torch.Tensor, eps: float = 1e-4) -> torch.Tens
   the mirror-symmetry data augmentation and shows up at eval +0° as a
   bimodal direction distribution.
 
-  Adding noise of magnitude ``eps`` (default 1e-4 m, much smaller than
+  Adding noise of magnitude ``eps`` (default 1e-3 m = 1 mm, well below
   the typical foot-to-ball distance of 0.01-0.5 m) only changes the
-  result when distances are within ``eps`` of each other.
+  result when distances are within ``eps`` of each other. V1.46 bumped
+  from 1e-4 → 1e-3 after V1.45's full-DR eval still showed a bimodal
+  +0° distribution: under action delay, foot positions are correlated
+  with old commands so the "tie" window is wider than the static-case
+  ε=1e-4 covered.
   """
   noise = (torch.rand_like(dist) * 2.0 - 1.0) * eps
   return (dist + noise).argmin(dim=-1)
