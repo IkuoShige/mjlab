@@ -126,6 +126,15 @@ def k1_kick_env_cfg(
     min_foot_speed=3.0,
     horizontal_force_threshold=15.0,
     perception=perception_cfg,
+    # V1.48 sim2real DR: 30% of episodes start the ball with a slow random
+    # xy velocity. Forces the policy to keep tracking the ball with its
+    # head/perception right up to kick contact rather than committing to
+    # a memorized swing trajectory at episode start. Speed range
+    # (0.0, 0.5) m/s — slow enough that the kick is still feasible
+    # within the 5s episode, fast enough that the trajectory shifts
+    # meaningfully during approach.
+    ball_moving_prob=0.3,
+    ball_init_speed_range=(0.0, 0.5),
     resampling_time_range=(1.0e9, 1.0e9),
     debug_vis=True,
   )

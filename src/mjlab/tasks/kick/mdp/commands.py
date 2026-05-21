@@ -100,6 +100,16 @@ class KickTargetCommandCfg(CommandTermCfg):
   (looking at feet, sim2real-ready). Set False at play time to play
   pre-V1.43 checkpoints (which were trained with Head_pitch=0 init)."""
 
+  ball_moving_prob: float = 0.0
+  """Probability that a reset ball spawns with a non-zero linear velocity.
+  V1.48 sets this to 0.3 so 30% of episodes have a slowly moving ball —
+  forces the policy to keep tracking the ball with its head/perception
+  up to the last moment before contact."""
+
+  ball_init_speed_range: tuple[float, float] = (0.0, 0.5)
+  """``(min, max)`` linear-speed magnitude in m/s for the moving-ball
+  branch of `ball_moving_prob`. Direction is sampled uniformly in xy."""
+
   horizontal_force_threshold: float = 10.0
   """Contact force threshold (N) for kick detection."""
 
@@ -245,16 +255,17 @@ class KickTargetCommand(CommandTerm):
     # all directions inc. left), but +0° forward collapsed (median 33°,
     # 0% success) — L/R foot indecision emerges at exact 0° when policy
     # learns to handle both sides.
-    # V1.47: refocus on the forward ±60° cone — user wants tight precision
-    # in the [-π/3, +π/3] zone (straight forward + ~60° to each side),
-    # while still maintaining sim2real DR. We drop both the rear and the
-    # extreme-side bins entirely and concentrate 70% of training on the
-    # tight ±30° core where the policy must hit dead center.
-    # Mixture (V1.47):
-    # - 70% in [-π/6,  π/6]      (±30°, forward core)
-    # - 30% in [π/6,   π/3]      (±30° to ±60°, mid-cone — mirror to negative)
-    # -  0% beyond ±60°
-    bin_probs = torch.tensor([0.70, 0.30, 0.0], device=self.device).expand(n, -1)
+    # V1.47/V1.48: refocus on the forward ±60° cone where the user wants
+    # tight precision, while keeping a small slice of training beyond ±60°
+    # so the policy remains *functional* (kicks happen, doesn't fall) at
+    # any heading. The precision tier is the inner cones; the 5% outside
+    # is just to prevent the policy from forgetting that arbitrary
+    # headings exist.
+    # Mixture (V1.48):
+    # - 70% in [-π/6, π/6]   (±30°, forward core — precision tier)
+    # - 25% in [±π/6, ±π/3]  (±30° to ±60°, mid-cone — precision tier)
+    # -  5% in [±π/3, ±π]    (±60° to ±180°, functional coverage)
+    bin_probs = torch.tensor([0.70, 0.25, 0.05], device=self.device).expand(n, -1)
     bin_idx = torch.multinomial(bin_probs, num_samples=1).squeeze(-1)
     bin_ranges = torch.tensor(
       [
@@ -316,10 +327,26 @@ class KickTargetCommand(CommandTerm):
     ball_state = torch.zeros(n, 13, device=self.device)
     ball_state[:, :3] = ball_pos
     ball_state[:, 3] = 1.0  # quat w
+
+    # V1.48: moving-ball DR. Sample per-env whether the ball starts
+    # moving, and if so give it a uniformly-random xy direction with a
+    # random speed in ``ball_init_speed_range``. Forces the policy to
+    # keep tracking the ball with its head/perception right up to the
+    # kick contact rather than committing to a memorized swing trajectory.
+    init_vel_w = torch.zeros(n, 3, device=self.device)
+    if cfg.ball_moving_prob > 0.0:
+      moving = torch.rand(n, device=self.device) < cfg.ball_moving_prob
+      lo, hi = cfg.ball_init_speed_range
+      speed = torch.rand(n, device=self.device) * (hi - lo) + lo
+      dir_angle = torch.rand(n, device=self.device) * (2.0 * math.pi)
+      init_vel_w[:, 0] = moving.float() * speed * torch.cos(dir_angle)
+      init_vel_w[:, 1] = moving.float() * speed * torch.sin(dir_angle)
+    ball_state[:, 7:10] = init_vel_w
+
     self.ball.write_root_state_to_sim(ball_state, env_ids=env_ids)
 
     self._ball_pos_w[env_ids] = ball_pos
-    self._ball_vel_w[env_ids] = 0.0
+    self._ball_vel_w[env_ids] = init_vel_w
     self._target_dir_w[env_ids] = torch.stack(
       [torch.cos(target_angle), torch.sin(target_angle)], dim=-1
     )
