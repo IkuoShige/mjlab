@@ -95,6 +95,11 @@ class KickTargetCommandCfg(CommandTermCfg):
   min_foot_speed: float = 3.0
   """Minimum foot speed (m/s) for a contact to count as a kick."""
 
+  reset_head_pitch_down: bool = True
+  """If True, override Head_pitch on reset to ``_INITIAL_POSE_RESET_TARGETS_RAD``
+  (looking at feet, sim2real-ready). Set False at play time to play
+  pre-V1.43 checkpoints (which were trained with Head_pitch=0 init)."""
+
   horizontal_force_threshold: float = 10.0
   """Contact force threshold (N) for kick detection."""
 
@@ -166,7 +171,9 @@ class KickTargetCommand(CommandTerm):
     # Covers the arm joints (HOME_KEYFRAME has them raised — V1.25 fixed
     # this to true arms-down) and Head_pitch (set to look at feet,
     # matching the real K1 power-on stance for sim2real).
-    pose_targets = _INITIAL_POSE_RESET_TARGETS_RAD
+    pose_targets = dict(_INITIAL_POSE_RESET_TARGETS_RAD)
+    if not cfg.reset_head_pitch_down:
+      pose_targets.pop("Head_pitch", None)
     pose_idx: list[int] = []
     pose_vals: list[float] = []
     robot_joint_names = list(self.robot.joint_names)
