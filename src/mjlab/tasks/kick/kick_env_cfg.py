@@ -124,19 +124,20 @@ def make_kick_env_cfg() -> ManagerBasedRlEnvCfg:
   # Actions (full joint position; per-robot overrides scales)
   # --------------------------------------------------------------------
 
-  # V1.44: action delay DR. K1 ZeroErr motors + EtherCAT loop have ~30-60 ms
-  # round-trip latency that mjlab does NOT model by default. Without it, the
-  # policy overfits to zero-delay and falls over when deployed to standalone
-  # MuJoCo (which has its own ~10-30 ms substep delay) or real K1. The
-  # 2-8 policy-step range = 40-160 ms at 50 Hz control, comfortably bracketing
-  # both targets. Mirrors booster_amp_lab's DelayedImplicitActuator.
+  # V1.44/V1.45: action delay DR. K1 ZeroErr motors + EtherCAT loop have
+  # ~30-60 ms round-trip latency that mjlab doesn't model by default.
+  # Without it, the policy overfits to zero-delay and breaks at deploy.
+  # V1.44 used (2, 8) = 40-160 ms which made adaptation hard in 3000 iters
+  # (direction accuracy degraded; some robots fell after whiff). V1.45
+  # narrows to (1, 4) = 20-80 ms — still brackets the real K1 ~50 ms
+  # latency but is much easier for the policy to compensate for.
   actions: dict[str, ActionTermCfg] = {
     "joint_pos": mdp.DelayedJointPositionActionCfg(
       entity_name="robot",
       actuator_names=(".*",),
       scale=0.5,
       use_default_offset=True,
-      delay_steps_range=(2, 8),
+      delay_steps_range=(1, 4),
     )
   }
 
@@ -397,9 +398,15 @@ def make_kick_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.rewards.foot_proximity,
       weight=-5.0,
     ),
+    # V1.45: pelvis_orientation weight -1 → -3 (3× bump, within safe band).
+    # Under V1.44's action delay some envs lost balance during the kick
+    # swing and fell after whiff. A stronger continuous upright penalty
+    # gives a per-step gradient against leaning regardless of whether the
+    # foot contacted the ball — addresses "robot must not fall even when
+    # missing the ball" requirement.
     "pelvis_orientation": RewardTermCfg(
       func=mdp.rewards.pelvis_orientation,
-      weight=-1.0,
+      weight=-3.0,
     ),
     # V1.11: head alignment weight -0.5 → -2.0 (4x). At -0.5 the policy
     # barely moved its head — the per-step penalty was too small relative
