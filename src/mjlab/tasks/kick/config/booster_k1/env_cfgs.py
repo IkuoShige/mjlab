@@ -145,32 +145,31 @@ def k1_kick_env_cfg(
   # ----- Play overrides -----
   if play:
     cfg.episode_length_s = 1.0e9
-    for group in cfg.observations.values():
-      group.enable_corruption = False
     cfg.events.pop("push_robot", None)
     cfg.scene.num_envs = max(cfg.scene.num_envs, 1)
     # V1.35: play distance matches training (0.20-0.40m). Show the
     # upper end so the robot still takes a step.
     cmd_term = cfg.commands["kick_target"]
     cmd_term.ball_spawn_distance_range = (0.30, 0.40)
-    # V1.44 follow-up: revert the Head_pitch=down init for play. Pre-V1.43
-    # checkpoints (V1.36, V1.38, V1.42, ...) were trained with Head_pitch=0
-    # and won't kick properly when started looking at the feet. V1.44+
-    # checkpoints can opt back in by passing reset_head_pitch_down=True
-    # explicitly in their own play override.
-    cmd_term.reset_head_pitch_down = False
-    # V1.44 follow-up: disable the action-delay buffer in play mode.
-    # Pre-V1.44 checkpoints were trained at zero delay, so applying
-    # 40-160 ms of action latency breaks them. V1.44+ checkpoints are
-    # trained WITH delay but evaluating them at zero delay is still a
-    # cleaner reference point (it shows the policy's intent, not the
-    # delay-degraded version). Real deploy / standalone MuJoCo runs
-    # outside this codepath and uses whatever latency the runtime
-    # imposes — that's the actual sim2real test.
+
+    # Two opt-in play modes, switched by env vars:
+    # - default ("clean" play): disable DR so a pre-V1.44 checkpoint still
+    #   works and the user sees the policy's intent without noise/delay.
+    # - MJLAB_KICK_PLAY_FULL_DR=1: keep training-time DR (action delay,
+    #   corruption, head_pitch_down init). Use this to evaluate
+    #   V1.43+/V1.44+ checkpoints under their own training distribution
+    #   (sim2sim/sim2real preview).
+    import os
+
     from mjlab.tasks.kick.mdp.delayed_action import DelayedJointPositionActionCfg
 
-    joint_pos_action = cfg.actions.get("joint_pos")
-    if isinstance(joint_pos_action, DelayedJointPositionActionCfg):
-      joint_pos_action.delay_steps_range = (0, 0)
+    full_dr_play = os.environ.get("MJLAB_KICK_PLAY_FULL_DR", "0") == "1"
+    if not full_dr_play:
+      for group in cfg.observations.values():
+        group.enable_corruption = False
+      cmd_term.reset_head_pitch_down = False
+      joint_pos_action = cfg.actions.get("joint_pos")
+      if isinstance(joint_pos_action, DelayedJointPositionActionCfg):
+        joint_pos_action.delay_steps_range = (0, 0)
 
   return cfg
