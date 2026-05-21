@@ -36,7 +36,13 @@ if TYPE_CHECKING:
 # negative and the RIGHT arm needs Shoulder_Roll positive (mirror), each
 # combined with Elbow_Pitch ≈ 1.5 rad to fold the forearm. Grid-search
 # yielded hand_z ≈ 0.10 m with this combination — i.e., true arms-down.
-_ARM_DOWN_RESET_TARGETS_RAD: dict[str, float] = {
+#
+# Head_pitch is set to the joint's upper limit (+0.855 rad ≈ +49°, head
+# fully tilted DOWN — positive pitch looks down per K1 convention). This
+# matches the real K1 power-on stance with the camera angled toward the
+# feet, so the policy doesn't OOD on the initial observation at deploy
+# time. The head is actuated so the policy can re-aim mid-episode.
+_INITIAL_POSE_RESET_TARGETS_RAD: dict[str, float] = {
   "ALeft_Shoulder_Pitch": 0.0,
   "Left_Shoulder_Roll": -1.0,
   "Left_Elbow_Pitch": 1.5,
@@ -45,6 +51,7 @@ _ARM_DOWN_RESET_TARGETS_RAD: dict[str, float] = {
   "Right_Shoulder_Roll": 1.0,
   "Right_Elbow_Pitch": 1.5,
   "Right_Elbow_Yaw": 0.0,
+  "Head_pitch": 0.855,
 }
 
 
@@ -154,26 +161,29 @@ class KickTargetCommand(CommandTerm):
         cfg.perception, self.num_envs, env.step_dt, self.device
       )
 
-    # V1.21: cache arm-joint indices + arms-down reset targets so we can
-    # override the K1 HOME_KEYFRAME's raised-arm pose on every reset.
-    arm_targets = _ARM_DOWN_RESET_TARGETS_RAD
-    arm_idx: list[int] = []
-    arm_vals: list[float] = []
+    # V1.21: cache reset-override joint indices and target angles so we can
+    # override the K1 HOME_KEYFRAME's defaults on every reset.
+    # Covers the arm joints (HOME_KEYFRAME has them raised — V1.25 fixed
+    # this to true arms-down) and Head_pitch (set to look at feet,
+    # matching the real K1 power-on stance for sim2real).
+    pose_targets = _INITIAL_POSE_RESET_TARGETS_RAD
+    pose_idx: list[int] = []
+    pose_vals: list[float] = []
     robot_joint_names = list(self.robot.joint_names)
-    for joint_name, target in arm_targets.items():
+    for joint_name, target in pose_targets.items():
       if joint_name in robot_joint_names:
-        arm_idx.append(robot_joint_names.index(joint_name))
-        arm_vals.append(target)
-    if arm_idx:
-      self._arm_reset_indices: torch.Tensor | None = torch.tensor(
-        arm_idx, dtype=torch.long, device=self.device
+        pose_idx.append(robot_joint_names.index(joint_name))
+        pose_vals.append(target)
+    if pose_idx:
+      self._pose_reset_indices: torch.Tensor | None = torch.tensor(
+        pose_idx, dtype=torch.long, device=self.device
       )
-      self._arm_reset_targets: torch.Tensor = torch.tensor(
-        arm_vals, dtype=torch.float32, device=self.device
+      self._pose_reset_targets: torch.Tensor = torch.tensor(
+        pose_vals, dtype=torch.float32, device=self.device
       )
     else:
-      self._arm_reset_indices = None
-      self._arm_reset_targets = torch.empty(0, device=self.device)
+      self._pose_reset_indices = None
+      self._pose_reset_targets = torch.empty(0, device=self.device)
 
     self.metrics["kick_success_rate"] = torch.zeros(self.num_envs, device=self.device)
     self.metrics["peak_kick_speed"] = torch.zeros(self.num_envs, device=self.device)
@@ -278,8 +288,8 @@ class KickTargetCommand(CommandTerm):
     # policy maintains an already-down pose instead of fighting it.
     starting_jp = self.robot.data.default_joint_pos[env_ids].clone()
     default_jv = self.robot.data.default_joint_vel[env_ids]
-    if self._arm_reset_indices is not None:
-      starting_jp[:, self._arm_reset_indices] = self._arm_reset_targets
+    if self._pose_reset_indices is not None:
+      starting_jp[:, self._pose_reset_indices] = self._pose_reset_targets
     self.robot.write_joint_state_to_sim(starting_jp, default_jv, env_ids=env_ids)
 
     # Robot was just written to env_origin with identity quat (forward = +x
