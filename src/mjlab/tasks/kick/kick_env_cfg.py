@@ -23,6 +23,7 @@ from mjlab.sim import MujocoCfg, SimulationCfg
 from mjlab.tasks.kick import mdp
 from mjlab.tasks.kick.mdp.commands import KickTargetCommandCfg
 from mjlab.terrains import TerrainEntityCfg
+from mjlab.utils.noise import GaussianNoiseCfg as Gnoise
 from mjlab.utils.noise import UniformNoiseCfg as Unoise
 from mjlab.viewer import ViewerConfig
 
@@ -34,24 +35,30 @@ def make_kick_env_cfg() -> ManagerBasedRlEnvCfg:
   # Observations
   # --------------------------------------------------------------------
 
+  # V1.44: sim2real noise upgrade — switch from Unoise (bounded uniform)
+  # to Gnoise (Gaussian) on proprioceptive obs to match real-sensor
+  # statistics. Standard devs picked so 3σ ≈ old uniform range max,
+  # matching booster_amp_lab's per-step noise model. Per-env calibration
+  # bias drift is added on top via NoiseModelWithAdditiveBias in the
+  # observation group (see config/booster_k1/env_cfgs.py override).
   actor_terms = {
     "base_ang_vel": ObservationTermCfg(
       func=base_mdp.builtin_sensor,
       params={"sensor_name": "robot/imu_ang_vel"},
-      noise=Unoise(n_min=-0.2, n_max=0.2),
+      noise=Gnoise(std=0.07),
     ),
     "projected_gravity": ObservationTermCfg(
       func=base_mdp.projected_gravity,
-      noise=Unoise(n_min=-0.05, n_max=0.05),
+      noise=Gnoise(std=0.02),
     ),
     "joint_pos": ObservationTermCfg(
       func=base_mdp.joint_pos_rel,
       params={"biased": True},
-      noise=Unoise(n_min=-0.01, n_max=0.01),
+      noise=Gnoise(std=0.005),
     ),
     "joint_vel": ObservationTermCfg(
       func=base_mdp.joint_vel_rel,
-      noise=Unoise(n_min=-0.5, n_max=0.5),
+      noise=Gnoise(std=0.2),
     ),
     "actions": ObservationTermCfg(func=base_mdp.last_action),
     "ball_pos_b_perceived": ObservationTermCfg(
@@ -117,12 +124,19 @@ def make_kick_env_cfg() -> ManagerBasedRlEnvCfg:
   # Actions (full joint position; per-robot overrides scales)
   # --------------------------------------------------------------------
 
+  # V1.44: action delay DR. K1 ZeroErr motors + EtherCAT loop have ~30-60 ms
+  # round-trip latency that mjlab does NOT model by default. Without it, the
+  # policy overfits to zero-delay and falls over when deployed to standalone
+  # MuJoCo (which has its own ~10-30 ms substep delay) or real K1. The
+  # 2-8 policy-step range = 40-160 ms at 50 Hz control, comfortably bracketing
+  # both targets. Mirrors booster_amp_lab's DelayedImplicitActuator.
   actions: dict[str, ActionTermCfg] = {
-    "joint_pos": JointPositionActionCfg(
+    "joint_pos": mdp.DelayedJointPositionActionCfg(
       entity_name="robot",
       actuator_names=(".*",),
       scale=0.5,
       use_default_offset=True,
+      delay_steps_range=(2, 8),
     )
   }
 
