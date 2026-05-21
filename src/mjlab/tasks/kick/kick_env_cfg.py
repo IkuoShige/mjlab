@@ -163,15 +163,19 @@ def make_kick_env_cfg() -> ManagerBasedRlEnvCfg:
       func=base_mdp.push_by_setting_velocity,
       mode="interval",
       # V1.23: more frequent + stronger pushes for sim2real robustness.
-      interval_range_s=(1.5, 3.0),
+      # V1.49: doubled linear/yaw and ~doubled pitch/roll ranges + slightly
+      # more frequent intervals — the deploy environment can have humans
+      # bumping the robot, uneven floors, ROS lag spikes. We want the
+      # policy to ride through perturbations without going OOD.
+      interval_range_s=(1.0, 2.5),
       params={
         "velocity_range": {
-          "x": (-0.5, 0.5),
-          "y": (-0.5, 0.5),
-          "z": (-0.15, 0.15),
-          "roll": (-0.35, 0.35),
-          "pitch": (-0.35, 0.35),
-          "yaw": (-0.5, 0.5),
+          "x": (-1.0, 1.0),
+          "y": (-1.0, 1.0),
+          "z": (-0.3, 0.3),
+          "roll": (-0.7, 0.7),
+          "pitch": (-0.7, 0.7),
+          "yaw": (-1.0, 1.0),
         }
       },
     ),
@@ -398,15 +402,16 @@ def make_kick_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.rewards.foot_proximity,
       weight=-5.0,
     ),
-    # V1.45: pelvis_orientation weight -1 → -3 (3× bump, within safe band).
-    # Under V1.44's action delay some envs lost balance during the kick
-    # swing and fell after whiff. A stronger continuous upright penalty
-    # gives a per-step gradient against leaning regardless of whether the
-    # foot contacted the ball — addresses "robot must not fall even when
-    # missing the ball" requirement.
+    # V1.45: pelvis_orientation weight -1 → -3.
+    # V1.49: -3 → -5 (1.67× bump within safe band). Combined with the
+    # blind-episode DR and stronger pushes in V1.49, the per-step upright
+    # gradient needs more weight so the policy chooses 'stay standing'
+    # over 'commit aggressive kick' when ball is invisible or a push
+    # arrives. Direct response to 'robot must not fall even when missing
+    # the ball OR when external forces hit'.
     "pelvis_orientation": RewardTermCfg(
       func=mdp.rewards.pelvis_orientation,
-      weight=-3.0,
+      weight=-5.0,
     ),
     # V1.11: head alignment weight -0.5 → -2.0 (4x). At -0.5 the policy
     # barely moved its head — the per-step penalty was too small relative

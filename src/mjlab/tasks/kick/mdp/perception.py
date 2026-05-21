@@ -113,6 +113,14 @@ class VirtualPerceptionCfg:
   """Per-env absolute range for in-FOV detection probability. Cameras with
   bad exposure / partial occlusion miss balls more often."""
 
+  blind_prob: float = 0.0
+  """Per-episode probability that an env is fully blind for the entire
+  episode — ``ball_mask`` always 0 regardless of FOV / detection. Models
+  the deploy-time failure where the detector pipeline crashes, the camera
+  is occluded, or the ball is simply not in the scene. V1.49 sets this to
+  0.1 so the policy sees occasional fully-blind episodes during training
+  and learns not to OOD on them."""
+
   fov_scale_range: tuple[float, float] = (0.85, 1.0)
   """Per-env multiplicative scaling on the FOV half-angles. Modeling
   miscalibrated / lower-quality cameras with effectively smaller FOV."""
@@ -213,6 +221,10 @@ class VirtualPerception:
     self._fov_v_per_env = torch.full(
       (num_envs,), cfg.fov_v, dtype=torch.float32, device=self.device
     )
+    # V1.49: per-episode blind flag. When True, the env's detection
+    # probability is forced to 0 throughout the episode — modeling a
+    # completely failed detector / occluded camera / absent ball.
+    self._blind_per_env = torch.zeros((num_envs,), dtype=torch.bool, device=self.device)
 
     self._sample_latency_and_rate(
       torch.arange(num_envs, dtype=torch.long, device=self.device)
@@ -245,6 +257,17 @@ class VirtualPerception:
     self._detection_prob_per_env[env_ids] = _uniform(*cfg.detection_prob_in_fov_range)
     self._fov_h_per_env[env_ids] = cfg.fov_h * _uniform(*cfg.fov_scale_range)
     self._fov_v_per_env[env_ids] = cfg.fov_v * _uniform(*cfg.fov_scale_range)
+    # V1.49: sample per-env blind flag and force detection prob to 0 for
+    # blind envs. Blind envs see ball_mask=0 throughout the episode.
+    if cfg.blind_prob > 0.0:
+      self._blind_per_env[env_ids] = torch.rand(n, device=self.device) < cfg.blind_prob
+      self._detection_prob_per_env[env_ids] = torch.where(
+        self._blind_per_env[env_ids],
+        torch.zeros_like(self._detection_prob_per_env[env_ids]),
+        self._detection_prob_per_env[env_ids],
+      )
+    else:
+      self._blind_per_env[env_ids] = False
 
     latency_mean = _uniform(*cfg.latency_mean_range)
     latency = (

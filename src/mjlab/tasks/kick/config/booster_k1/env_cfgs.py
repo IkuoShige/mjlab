@@ -92,6 +92,13 @@ def k1_kick_env_cfg(
       camera_offset_pos=_K1_CAMERA_OFFSET_POS,
       camera_offset_quat=_K1_CAMERA_OFFSET_QUAT,
       hold_last_on_miss=False,
+      # V1.49: OOD robustness. Lower detection prob floor so some envs
+      # see the ball <50% of frames (simulating bad lighting / partial
+      # occlusion). blind_prob=0.10 makes 10% of episodes have the ball
+      # entirely undetected (full detector failure). Forces the policy
+      # to handle `ball_mask=0` without OOD'ing into a kick at (0,0).
+      detection_prob_in_fov_range=(0.30, 0.95),
+      blind_prob=0.10,
     )
     if enable_perception
     else None
