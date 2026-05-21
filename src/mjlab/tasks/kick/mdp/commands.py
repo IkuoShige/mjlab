@@ -245,22 +245,22 @@ class KickTargetCommand(CommandTerm):
     # all directions inc. left), but +0° forward collapsed (median 33°,
     # 0% success) — L/R foot indecision emerges at exact 0° when policy
     # learns to handle both sides.
-    # V1.41: 92/8/0 (V1.38 balanced distribution) with stronger direction
-    # reward (kick_angle_error_l2 weight -3 → -10 in env_cfg). Hypothesis:
-    # 3× direction-penalty boost forces the policy to be precise at every
-    # heading, not just forward; this might break the V1.36/V1.38b
-    # trade-off without architectural change.
-    # Mixture (V1.41):
-    # - 92% in [-π/4, π/4]
-    # -  8% in side cones
-    # -  0% in rear arc
-    bin_probs = torch.tensor([0.92, 0.08, 0.0], device=self.device).expand(n, -1)
+    # V1.47: refocus on the forward ±60° cone — user wants tight precision
+    # in the [-π/3, +π/3] zone (straight forward + ~60° to each side),
+    # while still maintaining sim2real DR. We drop both the rear and the
+    # extreme-side bins entirely and concentrate 70% of training on the
+    # tight ±30° core where the policy must hit dead center.
+    # Mixture (V1.47):
+    # - 70% in [-π/6,  π/6]      (±30°, forward core)
+    # - 30% in [π/6,   π/3]      (±30° to ±60°, mid-cone — mirror to negative)
+    # -  0% beyond ±60°
+    bin_probs = torch.tensor([0.70, 0.30, 0.0], device=self.device).expand(n, -1)
     bin_idx = torch.multinomial(bin_probs, num_samples=1).squeeze(-1)
     bin_ranges = torch.tensor(
       [
-        [-math.pi / 4, math.pi / 4],
-        [math.pi / 4, math.pi / 2],
-        [math.pi / 2, math.pi],
+        [-math.pi / 6, math.pi / 6],
+        [math.pi / 6, math.pi / 3],
+        [math.pi / 3, math.pi],
       ],
       device=self.device,
     )
